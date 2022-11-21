@@ -50,6 +50,7 @@ const permission = {
       return new Promise(resolve => {
         const { roles } = data
         let accessedRouters
+        // 根据权限设定可访问的路由表
         if (roles.includes('admin')) {
           accessedRouters = asyncRouterMap
         } else {

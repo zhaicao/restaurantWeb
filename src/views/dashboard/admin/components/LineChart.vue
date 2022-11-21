@@ -36,14 +36,16 @@ export default {
       sidebarElm: null
     }
   },
-  watch: {
+/*  watch: {
+    // 检测到chartData发生变化，则调用此函数，将新值传入
     chartData: {
       deep: true,
       handler(val) {
+        console.info('chartData change')
         this.setOptions(val)
       }
     }
-  },
+  },*/
   mounted() {
     this.initChart()
     if (this.autoResize) {
@@ -78,10 +80,10 @@ export default {
         this.__resizeHandler()
       }
     },
-    setOptions({ expectedData, actualData } = {}) {
+    setOptions({ orderData, turnoverData } = {}) {
       this.chart.setOption({
         xAxis: {
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          data: ['11-15', '11-16', '11-17', '11-18', '11-19', '11-20', '11-21'],
           boundaryGap: false,
           axisTick: {
             show: false
@@ -89,7 +91,7 @@ export default {
         },
         grid: {
           left: 10,
-          right: 10,
+          right: 15,
           bottom: 20,
           top: 30,
           containLabel: true
@@ -107,10 +109,11 @@ export default {
           }
         },
         legend: {
-          data: ['expected', 'actual']
+          data: ['订单数', '营业额']
         },
         series: [{
-          name: 'expected', itemStyle: {
+          name: '订单数',
+          itemStyle: {
             normal: {
               color: '#FF005A',
               lineStyle: {
@@ -121,12 +124,12 @@ export default {
           },
           smooth: true,
           type: 'line',
-          data: expectedData,
+          data: orderData,
           animationDuration: 2800,
           animationEasing: 'cubicInOut'
         },
         {
-          name: 'actual',
+          name: '营业额',
           smooth: true,
           type: 'line',
           itemStyle: {
@@ -141,7 +144,7 @@ export default {
               }
             }
           },
-          data: actualData,
+          data: turnoverData,
           animationDuration: 2800,
           animationEasing: 'quadraticOut'
         }]

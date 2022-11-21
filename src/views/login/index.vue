@@ -4,7 +4,7 @@
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="off" label-position="left">
 
       <div class="title-container">
-        <h3 class="title">{{ $t('login.title') }}</h3>
+        <h3 class="title">餐厅管理系统</h3>
         <lang-select class="set-language"/>
       </div>
 
@@ -116,18 +116,14 @@ export default {
         if (valid) {
           this.loading = true
           this.$store.dispatch('LoginByUsername', this.loginForm).then(res => {
-            // this.loading = false
-            // this.$router.push({ path: this.redirect || '/' })
             this.loading = false
-            //登录成功之后重定向到首页
-            //this.$router.push({ path: this.redirect || '/' })
             if (res.code === 200){
               const user = res.data.user
               if (user.role === 0 || user.role === 2)
-                // 管理员或厨师
+                // To Dashboard
                 this.$router.push({ path: this.redirect || '/' })
               else if (user.role === 1)
-                // 服务员
+                // To Menus
                 this.$router.push({ path: this.redirect || '/' })
               else
                 this.$message.error('Roles Error')

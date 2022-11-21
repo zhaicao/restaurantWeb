@@ -26,7 +26,7 @@ router.beforeEach((to, from, next) => {
       NProgress.done() // if current page is dashboard will not trigger	afterEach hook, so manually handle it
     } else {
       if (store.getters.roles.length === 0) { // 判断当前用户是否已拉取完user_info信息
-        store.dispatch('GetUserInfo').then(res => { // 拉取user_info
+        store.dispatch('GetUserInfo').then(res => { // 拉取user_info的Action
           // const roles = res.data.roles // note: roles must be a array! such as: ['editor','develop']
           // ===============================================================
           const roles = ['admin'] // 写死测试

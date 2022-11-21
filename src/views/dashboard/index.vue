@@ -11,7 +11,10 @@ import editorDashboard from './editor'
 
 export default {
   name: 'Dashboard',
-  components: { adminDashboard, editorDashboard },
+  components: {
+    adminDashboard,
+    editorDashboard
+  },
   data() {
     return {
       currentRole: 'adminDashboard'
@@ -26,8 +29,6 @@ export default {
     if (!this.roles.includes('admin')) {
       this.currentRole = 'editorDashboard'
     }
-    console.info('============state=============')
-    console.info(this.$store.state)
   }
 }
 </script>

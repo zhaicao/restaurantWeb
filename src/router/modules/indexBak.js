@@ -11,6 +11,7 @@ import componentsRouter from './modules/components'
 import chartsRouter from './modules/charts'
 import tableRouter from './modules/table'
 import nestedRouter from './modules/nested'
+import adminRouter from './modules/admin'
 
 /** note: Submenu only appear when children.length>=1
  *  detail see  https://panjiachen.github.io/vue-element-admin-site/guide/essentials/router-and-nav.html
@@ -95,7 +96,6 @@ export const constantRouterMap = [
     path: '/guide',
     component: Layout,
     redirect: '/guide/index',
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -113,140 +113,13 @@ export default new Router({
   routes: constantRouterMap
 })
 
-// 动态路由
 export const asyncRouterMap = [
-  {
-    path: '/table0',
-    component: Layout,
-    redirect: '/table0/complex-table0',
-    name: 'Users',
-    meta: {
-      title: '人员管理',
-      icon: 'peoples',
-      roles: ['admin']
-    },
-    children: [
-      {
-        path: 'complex-table0',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable0',
-        meta: { title: '用户管理' }
-      },
-      {
-        path: 'complex-table',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable',
-        meta: { title: '考勤管理' }
-      }
-    ]
-  },
-  {
-    path: '/table1',
-    component: Layout,
-    redirect: '/table1/complex-table1',
-    name: 'Shopping',
-    meta: {
-      title: '餐厅管理',
-      icon: 'shopping',
-      roles: ['admin']
-    },
-    children: [
-      {
-        path: 'complex-table1',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable1',
-        meta: { title: '菜单管理' }
-      },
-      {
-        path: 'complex-table2',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable2',
-        meta: { title: '桌位/包间管理' }
-      }
-    ]
-  },
-  {
-    path: '/table2',
-    component: Layout,
-    redirect: '/table2/complex-table3',
-    name: 'Orders',
-    meta: {
-      title: '订单管理',
-      icon: 'list',
-      roles: ['admin']
-    },
-    children: [
-      {
-        path: 'complex-table3',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable3',
-        meta: { title: '新订单' }
-      },
-      {
-        path: 'complex-table4',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable4',
-        meta: { title: '订单列表' }
-      }
-    ]
-  },
-  {
-    path: '/table3',
-    component: Layout,
-    redirect: '/table3/complex-table5',
-    name: 'Message',
-    meta: {
-      title: '消息管理',
-      icon: 'message',
-      roles: ['admin']
-    },
-    children: [
-      {
-        path: 'complex-table5',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable5',
-        meta: { title: '催单消息' }
-      },
-      {
-        path: 'complex-table6',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable6',
-        meta: { title: '消息列表' }
-      }
-    ]
-  },
-  {
-    path: '/table4',
-    component: Layout,
-    redirect: '/table4/complex-table7',
-    name: 'Chart',
-    meta: {
-      title: '营收情况',
-      icon: 'chart',
-      roles: ['admin']
-    },
-    children: [
-      {
-        path: 'complex-table7',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable7',
-        meta: { title: '营收列表' }
-      },
-      {
-        path: 'complex-table8',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable8',
-        meta: { title: '统计图' }
-      }
-    ]
-  },
-
+  adminRouter,
   {
     path: '/permission',
     component: Layout,
     redirect: '/permission/index',
     alwaysShow: true, // will always show the root menu
-    // hidden: true,
     meta: {
       title: 'permission',
       icon: 'lock',
@@ -277,7 +150,6 @@ export const asyncRouterMap = [
   {
     path: '/icon',
     component: Layout,
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -287,12 +159,18 @@ export const asyncRouterMap = [
       }
     ]
   },
+
+  /** When your routing table is too long, you can split it into small modules**/
+  componentsRouter,
+  chartsRouter,
+  nestedRouter,
+  // tableRouter,
+
   {
     path: '/example',
     component: Layout,
     redirect: '/example/list',
     name: 'Example',
-    hidden: true,
     meta: {
       title: 'example',
       icon: 'example'
@@ -323,7 +201,6 @@ export const asyncRouterMap = [
   {
     path: '/tab',
     component: Layout,
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -333,12 +210,12 @@ export const asyncRouterMap = [
       }
     ]
   },
+
   {
     path: '/error',
     component: Layout,
     redirect: 'noredirect',
     name: 'ErrorPages',
-    hidden: true,
     meta: {
       title: 'errorPages',
       icon: '404'
@@ -363,7 +240,6 @@ export const asyncRouterMap = [
     path: '/error-log',
     component: Layout,
     redirect: 'noredirect',
-    hidden: true,
     children: [
       {
         path: 'log',
@@ -379,7 +255,6 @@ export const asyncRouterMap = [
     component: Layout,
     redirect: '/excel/export-excel',
     name: 'Excel',
-    hidden: true,
     meta: {
       title: 'excel',
       icon: 'excel'
@@ -411,7 +286,6 @@ export const asyncRouterMap = [
     component: Layout,
     redirect: '/zip/download',
     alwaysShow: true,
-    hidden: true,
     meta: { title: 'zip', icon: 'zip' },
     children: [
       {
@@ -427,7 +301,6 @@ export const asyncRouterMap = [
     path: '/theme',
     component: Layout,
     redirect: 'noredirect',
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -442,7 +315,6 @@ export const asyncRouterMap = [
     path: '/clipboard',
     component: Layout,
     redirect: 'noredirect',
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -456,7 +328,6 @@ export const asyncRouterMap = [
   {
     path: '/i18n',
     component: Layout,
-    hidden: true,
     children: [
       {
         path: 'index',
@@ -470,7 +341,6 @@ export const asyncRouterMap = [
   {
     path: 'external-link',
     component: Layout,
-    hidden: true,
     children: [
       {
         path: 'https://github.com/PanJiaChen/vue-element-admin',
