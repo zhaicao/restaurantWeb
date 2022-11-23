@@ -87,13 +87,15 @@ const user = {
             name: 'Super Admin'
           },
           editor: {
-            roles: ['editor'],
-            token: 'editor',
-            introduction: '我是编辑',
+            roles: ['chef'],
+            token: 'chef',
+            introduction: '我是厨师',
             avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-            name: 'Normal Editor'
+            name: 'Normal Chef'
           }
         }
+        console.info('==============================')
+        console.info(user.state)
         const data = userMap['admin']
         commit('SET_ROLES', data.roles)
         commit('SET_NAME', data.name)

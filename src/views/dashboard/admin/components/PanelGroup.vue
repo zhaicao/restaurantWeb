@@ -57,7 +57,7 @@ export default {
   },
   data() {
     return {
-      consumerVal: 3176,
+      consumerVal: 371,
       ordersVal: 13600,
       unreadMsgVal: 81212,
       turnoverVal: 9280

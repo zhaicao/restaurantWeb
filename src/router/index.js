@@ -116,9 +116,9 @@ export default new Router({
 // 动态路由
 export const asyncRouterMap = [
   {
-    path: '/table0',
+    path: '/userInfo',
     component: Layout,
-    redirect: '/table0/complex-table0',
+    redirect: '/userInfo/userMgmt',
     name: 'Users',
     meta: {
       title: '人员管理',
@@ -127,23 +127,23 @@ export const asyncRouterMap = [
     },
     children: [
       {
-        path: 'complex-table0',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable0',
+        path: 'userMgmt',
+        component: () => import('@/views/userInfo/userMgmt'),
+        name: 'UserMgmt',
         meta: { title: '用户管理' }
       },
       {
-        path: 'complex-table',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable',
+        path: 'attendance',
+        component: () => import('@/views/userInfo/attendance'),
+        name: 'Attendance',
         meta: { title: '考勤管理' }
       }
     ]
   },
   {
-    path: '/table1',
+    path: '/restaurant',
     component: Layout,
-    redirect: '/table1/complex-table1',
+    redirect: '/restaurant/menusMgmt',
     name: 'Shopping',
     meta: {
       title: '餐厅管理',
@@ -152,15 +152,15 @@ export const asyncRouterMap = [
     },
     children: [
       {
-        path: 'complex-table1',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable1',
+        path: 'menusMgmt',
+        component: () => import('@/views/restaurantMgmt/menus'),
+        name: 'MenusMgmt',
         meta: { title: '菜单管理' }
       },
       {
-        path: 'complex-table2',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable2',
+        path: 'seatsMgmt',
+        component: () => import('@/views/restaurantMgmt/seats'),
+        name: 'SeatsMgmt',
         meta: { title: '桌位/包间管理' }
       }
     ]
@@ -173,7 +173,7 @@ export const asyncRouterMap = [
     meta: {
       title: '订单管理',
       icon: 'list',
-      roles: ['admin']
+      roles: ['admin', 'chef']
     },
     children: [
       {
@@ -198,7 +198,7 @@ export const asyncRouterMap = [
     meta: {
       title: '消息管理',
       icon: 'message',
-      roles: ['admin']
+      roles: ['admin', 'chef']
     },
     children: [
       {
@@ -250,7 +250,7 @@ export const asyncRouterMap = [
     meta: {
       title: 'permission',
       icon: 'lock',
-      roles: ['admin', 'editor'] // you can set roles in root nav
+      roles: ['admin', 'chef'] // you can set roles in root nav
     },
     children: [
       {

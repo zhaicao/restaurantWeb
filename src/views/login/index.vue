@@ -123,7 +123,7 @@ export default {
                 // To Dashboard
                 this.$router.push({ path: this.redirect || '/' })
               else if (user.role === 1)
-                // To Menus
+                // To Order
                 this.$router.push({ path: this.redirect || '/' })
               else
                 this.$message.error('Roles Error')

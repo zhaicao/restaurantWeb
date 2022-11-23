@@ -6,14 +6,14 @@
         Only
         <el-tag class="permission-tag" size="small">admin</el-tag> can see this
       </span>
-      <span v-permission="['editor']" class="permission-alert">
+      <span v-permission="['chef']" class="permission-alert">
         Only
         <el-tag class="permission-tag" size="small">editor</el-tag> can see this
       </span>
-      <span v-permission="['admin','editor']" class="permission-alert">
+      <span v-permission="['admin','chef']" class="permission-alert">
         Both
         <el-tag class="permission-tag" size="small">admin</el-tag> and
-        <el-tag class="permission-tag" size="small">editor</el-tag> can see this
+        <el-tag class="permission-tag" size="small">chef</el-tag> can see this
       </span>
     </div>
 
@@ -23,8 +23,8 @@
       </code>
       <el-tabs type="border-card" style="width:500px;">
         <el-tab-pane v-if="checkPermission(['admin'])" label="Admin">Admin can see this</el-tab-pane>
-        <el-tab-pane v-if="checkPermission(['editor'])" label="Editor">Editor can see this</el-tab-pane>
-        <el-tab-pane v-if="checkPermission(['admin','editor'])" label="Admin-OR-Editor">Both admin or editor can see this</el-tab-pane>
+        <el-tab-pane v-if="checkPermission(['chef'])" label="Editor">Editor can see this</el-tab-pane>
+        <el-tab-pane v-if="checkPermission(['admin','chef'])" label="Admin-OR-Editor">Both admin or editor can see this</el-tab-pane>
       </el-tabs>
     </div>
   </div>
