@@ -2,13 +2,18 @@
   <div style="text-align: center;">
     <article>
       <section>
-        <video id="video"></video>
+        <video id="video" autoplay="autoplay"></video>
       </section>
       <section>
         <canvas id="canvas"></canvas>
       </section>
       <section><img src="" alt="" id="img" /></section>
     </article>
+    <!--
+    <el-button type="primary" @click="getVideo">打开</el-button>
+    <el-button type="primary" @click="cancelCloseVideo">关闭</el-button>
+    <el-button type="primary"  @click="takePhoto" >拍照</el-button>
+    -->
   </div>
 </template>
 
@@ -18,73 +23,41 @@
   const Address = ''
   export default {
     name: 'TakePhotos',
-    data () {
-      return {
-        mediaStreamTrack: null
-      }
-    },
     methods: {
-      opening () {
-        let convas = document.querySelector('#canvas') //
-        let audio = document.querySelector('audio')
-        let img = document.querySelector('#img')
-        let btn = document.querySelector('button')
-        let context = canvas.getContext('2d')
-        let width = 320 // 视频和canvas的宽度
-        let height = 0 //
-        let streaming = false // 是否开始捕获媒体
-        // 老的浏览器可能根本没有实现 mediaDevices，所以我们可以先设置一个空的对象
-        if (navigator.mediaDevices == undefined) {
-          navigator.mediaDevices = {}
-        }
-        // 获取用户媒体,包含视频和音频
-        navigator.mediaDevices
-          .getUserMedia({ video: true})
-          .then((stream) => {
-            video.srcObject = stream // 将捕获的视频流传递给video  放弃window.URL.createObjectURL(stream)的使用
-            video.play() //  播放视频
-            this.mediaStreamTrack = stream
-          })
-      },
-      closing () {
-        this.mediaStreamTrack.getVideoTracks().forEach(function (track) {
-          track.stop();
-          //context1.clearRect(0, 0,context1.width, context1.height);//清除画布
+      getVideo () {
+        let constraints = {
+          video: { width: 500, height: 425 }
+          //audio: true //开启麦克风
+        };
+        /*
+        这里介绍新的方法:H5新媒体接口 navigator.mediaDevices.getUserMedia()
+        这个方法会提示用户是否允许媒体输入,(媒体输入主要包括相机,视频采集设备,屏幕共享服务,麦克风,A/D转换器等)
+        返回的是一个Promise对象。
+        如果用户同意使用权限,则会将 MediaStream对象作为resolve()的参数传给then()
+        如果用户拒绝使用权限,或者请求的媒体资源不可用,则会将 PermissionDeniedError作为reject()的参数传给catch()
+        */
+        let _this=this;
+        let promise = navigator.mediaDevices.getUserMedia(constraints);
+        promise.then(function (MediaStream) {
+          video.srcObject = MediaStream;
+          _this.MediaStreamTrack=typeof MediaStream.stop==='function'?MediaStream:MediaStream.getTracks()[0];
+          video.play();
+
+        }).catch(function (PermissionDeniedError) {
+          console.log(PermissionDeniedError);
         })
       },
-      tackcapture () {
-        // 需要判断媒体流是否就绪
-        let convas = document.querySelector('#canvas') //
-        let video = document.querySelector('#video')
-        let audio = document.querySelector('audio')
-        let img = document.querySelector('#img')
-        let btn = document.querySelector('button')
-        let context = canvas.getContext('2d')
-        let width = 320 // 视频和canvas的宽度
-        let height = 0 //
-        let streaming = true // 是否开始捕获媒体
-        if (streaming) {
-          context.drawImage(video, 0, 0, 350, 200) // 将视频画面捕捉后绘制到canvas里面
-          img.src = canvas.toDataURL('image/png') // 将canvas的数据传送到img里
-          alert(img.src) // 这边的值可以传入后端
-        }
-
-        // 监听视频流就位事件,即视频可以播放了
-        video.addEventListener(
-          'canplay',
-          function (ev) {
-            if (!streaming) {
-              height = video.videoHeight / (video.videoWidth / width)
-
-              video.setAttribute('width', width)
-              video.setAttribute('height', height)
-              canvas.setAttribute('width', width)
-              canvas.setAttribute('height', height)
-              streaming = true
-            }
-          },
-          false
-        )
+      cancelCloseVideo () {
+        this.MediaStreamTrack && this.MediaStreamTrack.stop();
+        // this.contextCanvas.clearRect(0, 0,this.contextCanvas.width, this.contextCanvas.height);//清除画布
+      },
+      takePhoto () {
+        //获得Canvas对象
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 500, 400);
+        var photoSrc = document.getElementById("canvas").toDataURL("image/jpeg", 0.8);
+        this.form1.img=photoSrc
       }
     }
   }

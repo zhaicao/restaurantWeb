@@ -2,30 +2,14 @@
   <div class="app-container">
     <div class="filter-container">
       <el-input
-        placeholder="用户名/工号"
+        placeholder="包间/桌号"
         v-model="listQuery.title"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
-      <el-input
-        placeholder="姓名"
-        v-model="listQuery.title"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"/>
-      <el-select v-model="listQuery.roles"
-                 placeholder="类型"
-                 clearable style="width: 90px"
-                 class="filter-item">
-        <el-option v-for="item in attendanceType"
-                   :key="item.value"
-                   :label="item.label"
-                   :value="item.value"/>
-      </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">上班</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">下班</el-button>
+      <el-button class="filter-item" style="margin-right: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
     </div>
 
     <!--Table-->
@@ -43,29 +27,14 @@
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户名/工号" width="200px" align="center">
+      <el-table-column label="包间/桌号" width="240px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.userName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="姓名" width="200px" align="center">
+      <el-table-column label="描述" min-width="300px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.realName }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="类型" align="center" width="140px">
-        <template slot-scope="scope">
-          <el-tag>{{ scope.row.role | typeFilter }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="上班时间" align="center" width="245px">
-        <template slot-scope="scope">
-          <span>{{ scope.row.display_time }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="下班时间" align="center" width="245px">
-        <template slot-scope="scope">
-          <span>{{ scope.row.display_time }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" min-width="200px" class-name="small-padding fixed-width">
@@ -82,20 +51,19 @@
 
     <!--Dialog-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="userForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in attendanceType" :key="item.value" :label="item.label" :value="item.value"/>
-          </el-select>
+      <el-form ref="dataForm" :rules="rules" :model="seatForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="包间/桌号" prop="seatName">
+          <el-input v-model="seatForm.seatName"/>
         </el-form-item>
-        <el-form-item label="用户名" prop="userName">
-          <el-input v-model="userForm.userName"/>
-        </el-form-item>
-        <el-form-item label="姓名" prop="realName">
-          <el-input v-model="userForm.realName"/>
-        </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="userForm.phone"/>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            type="textarea"
+            placeholder="请输入内容"
+            v-model="seatForm.description"
+            maxlength="50"
+            show-word-limit
+          >
+          </el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -179,12 +147,10 @@
         statusOptions: ['published', 'draft', 'deleted'],
         showReviewer: false,
         // Dialog中数据
-        userForm: {
+        seatForm: {
           id: undefined,
-          role: 0,
-          userName: '',
-          realName: '',
-          phone: ''
+          seatName: '',
+          description: ''
         },
         // 默认Dialog表单不可见
         dialogFormVisible: false,
@@ -198,10 +164,7 @@
         pvData: [],
         // 表单rules
         rules: {
-          role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-          userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-          realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-          phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
+          seatName: [{ required: true, message: '请输入桌号/包间', trigger: 'change' }]
         },
         downloadLoading: false
       }
@@ -251,12 +214,10 @@
       },
       // 重置表单
       resetForm() {
-        this.userForm = {
+        this.seatForm = {
           id: undefined,
-          role: 0,
-          userName: '',
-          realName: '',
-          phone: ''
+          seatName: '',
+          description: ''
         }
       },
       // 添加按钮事件
@@ -273,8 +234,8 @@
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             //调用API
-            createArticle(this.userForm).then(() => {
-              this.list.unshift(this.userForm)
+            createArticle(this.seatForm).then(() => {
+              this.list.unshift(this.seatForm)
               this.dialogFormVisible = false
               this.$notify({
                 title: '成功',
@@ -290,7 +251,7 @@
       // 修改按钮事件
       handleUpdate(row) {
         console.info(row)
-        this.userForm = Object.assign({}, row) // copy obj
+        this.seatForm = Object.assign({}, row) // copy obj
         this.dialogStatus = 'update'
         this.dialogFormVisible = true
         this.$nextTick(() => {
@@ -301,13 +262,13 @@
       updateData() {
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
-            const tempData = Object.assign({}, this.userForm)
+            const tempData = Object.assign({}, this.seatForm)
             tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
             updateArticle(tempData).then(() => {
               for (const v of this.list) {
-                if (v.id === this.userForm.id) {
+                if (v.id === this.seatForm.id) {
                   const index = this.list.indexOf(v)
-                  this.list.splice(userMgmt, 1, this.userForm)
+                  this.list.splice(userMgmt, 1, this.seatForm)
                   break
                 }
               }

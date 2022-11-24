@@ -2,30 +2,23 @@
   <div class="app-container">
     <div class="filter-container">
       <el-input
-        placeholder="用户名/工号"
+        placeholder="菜品"
         v-model="listQuery.title"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
-      <el-input
-        placeholder="姓名"
-        v-model="listQuery.title"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"/>
       <el-select v-model="listQuery.roles"
-                 placeholder="类型"
+                 placeholder="种类"
                  clearable style="width: 90px"
                  class="filter-item">
-        <el-option v-for="item in attendanceType"
+        <el-option v-for="item in menuCategory"
                    :key="item.value"
                    :label="item.label"
                    :value="item.value"/>
       </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">上班</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">下班</el-button>
+      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
     </div>
 
     <!--Table-->
@@ -43,29 +36,28 @@
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户名/工号" width="200px" align="center">
+      <el-table-column label="图片" width="350px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.userName }}</span>
+          <el-image
+            style="width: 200px; height: 160px"
+            :src="require('@/assets/images/profile.gif')"
+            :preview-src-list="require('@/assets/images/profile.gif')">
+          </el-image>
         </template>
       </el-table-column>
-      <el-table-column label="姓名" width="200px" align="center">
+      <el-table-column label="菜品" width="340px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.realName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="类型" align="center" width="140px">
+      <el-table-column label="种类" align="center" width="140px">
         <template slot-scope="scope">
           <el-tag>{{ scope.row.role | typeFilter }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="上班时间" align="center" width="245px">
+      <el-table-column label="价格（元）" width="200px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.display_time }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="下班时间" align="center" width="245px">
-        <template slot-scope="scope">
-          <span>{{ scope.row.display_time }}</span>
+          <span>{{ scope.row.forecast }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" min-width="200px" class-name="small-padding fixed-width">
@@ -82,20 +74,20 @@
 
     <!--Dialog-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="userForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in attendanceType" :key="item.value" :label="item.label" :value="item.value"/>
+      <el-form ref="dataForm" :rules="rules" :model="menuForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="种类" prop="category">
+          <el-select v-model="menuForm.category" class="filter-item" placeholder="Please select">
+            <el-option v-for="item in menuCategory" :key="item.value" :label="item.label" :value="item.value"/>
           </el-select>
         </el-form-item>
-        <el-form-item label="用户名" prop="userName">
-          <el-input v-model="userForm.userName"/>
+        <el-form-item label="菜品" prop="dish">
+          <el-input v-model="menuForm.dish"/>
         </el-form-item>
-        <el-form-item label="姓名" prop="realName">
-          <el-input v-model="userForm.realName"/>
+        <el-form-item label="价格" prop="price">
+          <el-input v-model="menuForm.price"/>
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="userForm.phone"/>
+        <el-form-item label="图片" prop="image">
+          <UploadImages/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -122,25 +114,29 @@
   import waves from '@/directive/waves' // Waves directive
   import { parseTime } from '@/utils'
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
+  import UploadImages from "./component/uploadImages";
 
   // 定义角色对应列表
-  const attendanceType = [{
-    value: 0,
-    label: '正常'
-  },{
+  const menuCategory = [{
     value: 1,
-    label: '请假'
+    label: '主食'
+  },{
+    value: 2,
+    label: '小吃'
+  },{
+    value: 3,
+    label: '饮品'
   }]
 
   // arr to obj ,such as { 0 : "管理员", 1 : "服务员" }
-  const attendanceTypeKeyValue = attendanceType.reduce((acc, cur) => {
+  const menuTypeKeyValue = menuCategory.reduce((acc, cur) => {
     acc[cur.value] = cur.label
     return acc
   }, {})
 
   export default {
     name: 'MenusMgmt',
-    components: { Pagination },
+    components: { Pagination, UploadImages },
     directives: { waves },
     filters: {
       statusFilter(status) {
@@ -152,9 +148,9 @@
         return statusMap[status]
       },
       // 角色根据ID显示名字
-      typeFilter(attType) {
-        if (attType == 0 || attType == 1)
-          return attendanceTypeKeyValue[attType]
+      typeFilter(menuCate) {
+        if (menuCate == 1 || menuCate == 2 || menuCate == 3)
+          return menuTypeKeyValue[menuCate]
         else
           return 'Other'
       }
@@ -174,17 +170,17 @@
           type: undefined,
           sort: '+id'
         },
-        attendanceType,
+        menuCategory,
         sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
         statusOptions: ['published', 'draft', 'deleted'],
         showReviewer: false,
         // Dialog中数据
-        userForm: {
+        menuForm: {
           id: undefined,
-          role: 0,
-          userName: '',
-          realName: '',
-          phone: ''
+          category: 1,
+          dish: '',
+          price: '',
+          image: ''
         },
         // 默认Dialog表单不可见
         dialogFormVisible: false,
@@ -198,10 +194,9 @@
         pvData: [],
         // 表单rules
         rules: {
-          role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-          userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-          realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-          phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
+          dish: [{ required: true, message: '请输入菜品名', trigger: 'blur' }],
+          price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
+          image: [{ required: true, message: '请上传菜品图片', trigger: 'blur' }],
         },
         downloadLoading: false
       }
@@ -251,12 +246,12 @@
       },
       // 重置表单
       resetForm() {
-        this.userForm = {
+        this.menuForm = {
           id: undefined,
-          role: 0,
-          userName: '',
-          realName: '',
-          phone: ''
+          category: 1,
+          dish: '',
+          price: '',
+          image: ''
         }
       },
       // 添加按钮事件
@@ -273,8 +268,8 @@
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             //调用API
-            createArticle(this.userForm).then(() => {
-              this.list.unshift(this.userForm)
+            createArticle(this.menuForm).then(() => {
+              this.list.unshift(this.menuForm)
               this.dialogFormVisible = false
               this.$notify({
                 title: '成功',
@@ -290,7 +285,7 @@
       // 修改按钮事件
       handleUpdate(row) {
         console.info(row)
-        this.userForm = Object.assign({}, row) // copy obj
+        this.menuForm = Object.assign({}, row) // copy obj
         this.dialogStatus = 'update'
         this.dialogFormVisible = true
         this.$nextTick(() => {
@@ -301,13 +296,13 @@
       updateData() {
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
-            const tempData = Object.assign({}, this.userForm)
+            const tempData = Object.assign({}, this.menuForm)
             tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
             updateArticle(tempData).then(() => {
               for (const v of this.list) {
-                if (v.id === this.userForm.id) {
+                if (v.id === this.menuForm.id) {
                   const index = this.list.indexOf(v)
-                  this.list.splice(userMgmt, 1, this.userForm)
+                  this.list.splice(userMgmt, 1, this.menuForm)
                   break
                 }
               }

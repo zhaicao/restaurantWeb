@@ -24,8 +24,8 @@
                    :value="item.value"/>
       </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleOnDuty">下班</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleOnDuty">上班</el-button>
+      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleAttendence('punchOut')">签退</el-button>
+      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleAttendence('punchIn')">签到</el-button>
     </div>
 
     <!--Table-->
@@ -83,8 +83,8 @@
     <el-dialog :title="dialogStatus" :visible.sync="dialogFormVisible">
         <TakePhotos ref="takePhotos"></TakePhotos>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="cancelDialog()">取消</el-button>
-        <el-button type="primary" @click="dialogStatus==='create'?createData():updateData()">签到</el-button>
+        <el-button @click="cancelCloseDialog()">取消</el-button>
+        <el-button type="primary" @click="dialogStatus==='签到'?punchInData():punchOutData()">{{dialogStatus}}</el-button>
       </div>
     </el-dialog>
     <!--\Dialog-->
@@ -95,7 +95,6 @@
 <script>
   import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
   import waves from '@/directive/waves' // Waves directive
-  import { parseTime } from '@/utils'
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
   import TakePhotos from '@/views/userInfo/component/takePhoto'
 
@@ -167,8 +166,8 @@
         dialogStatus: '',
         // Dialog的Title
         textMap: {
-          update: '编辑',
-          create: '添加'
+          punchIn: '签到',
+          punchOut: '签退'
         },
         dialogPvVisible: false,
         pvData: [],
@@ -186,9 +185,12 @@
       this.getList()
     },
     methods: {
-      cancelDialog(){
+      // Dialog取消
+      cancelCloseDialog(){
         this.dialogFormVisible = false;
-        this.$refs.takePhotos.closing();
+        this.$nextTick(() => {
+          this.$refs.takePhotos.cancelCloseVideo()
+        })
       },
       // 获取数据
       getList() {
@@ -240,67 +242,50 @@
         }
       },
       // 添加按钮事件
-      handleOnDuty() {
-        this.dialogStatus = '上班'
+      handleAttendence(type) {
+        this.dialogStatus = this.textMap[type]
         // 渲染完毕后开启摄像头
         this.$nextTick(() => {
-          this.$refs.takePhotos.opening()
+          this.$refs.takePhotos.getVideo()
         })
         this.dialogFormVisible = true
       },
       // Dialog-添加事件
-      createData() {
-        this.$refs['dataForm'].validate((valid) => {
-          if (valid) {
-            //调用API
-            createArticle(this.userForm).then(() => {
-              this.list.unshift(this.userForm)
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '创建成功',
-                type: 'success',
-                duration: 2000
-              })
-              console.info(this.list)
-            })
-          }
-        })
-      },
-      // 修改按钮事件
-      handleUpdate(row) {
-        console.info(row)
-        this.userForm = Object.assign({}, row) // copy obj
-        this.dialogStatus = 'offDuty'
-        this.dialogFormVisible = true
-        this.$nextTick(() => {
-          this.$refs['dataForm'].clearValidate()
-        })
+      punchInData() {
+        this.$notify({
+                    title: '签到',
+                    message: '签到成功',
+                    type: 'success',
+                    duration: 2000
+                  })
+        this.cancelCloseDialog()
+
+        // this.$refs['dataForm'].validate((valid) => {
+        //   if (valid) {
+        //     //调用API
+        //     createArticle(this.userForm).then(() => {
+        //       this.list.unshift(this.userForm)
+        //       this.dialogFormVisible = false
+        //       this.$notify({
+        //         title: '成功',
+        //         message: '创建成功',
+        //         type: 'success',
+        //         duration: 2000
+        //       })
+        //       console.info(this.list)
+        //     })
+        //   }
+        // })
       },
       // Dialog更新事件
-      updateData() {
-        this.$refs['dataForm'].validate((valid) => {
-          if (valid) {
-            const tempData = Object.assign({}, this.userForm)
-            tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-            updateArticle(tempData).then(() => {
-              for (const v of this.list) {
-                if (v.id === this.userForm.id) {
-                  const index = this.list.indexOf(v)
-                  this.list.splice(userMgmt, 1, this.userForm)
-                  break
-                }
-              }
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '更新成功',
-                type: 'success',
-                duration: 2000
-              })
-            })
-          }
+      punchOutData() {
+        this.$notify({
+          title: '签退',
+          message: '签退成功',
+          type: 'success',
+          duration: 2000
         })
+        this.cancelCloseDialog()
       },
       // 删除按钮事件
       handleDelete(row) {
@@ -312,16 +297,6 @@
         })
         const index = this.list.indexOf(row)
         this.list.splice(userMgmt, 1)
-      },
-      // 表单内容转Jason
-      formatJson(filterVal, jsonData) {
-        return jsonData.map(v => filterVal.map(j => {
-          if (j === 'timestamp') {
-            return parseTime(v[j])
-          } else {
-            return v[j]
-          }
-        }))
       }
     }
   }
