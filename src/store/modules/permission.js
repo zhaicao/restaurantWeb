@@ -30,7 +30,6 @@ function filterAsyncRouter(routes, roles) {
       res.push(tmp)
     }
   })
-
   return res
 }
 
@@ -56,8 +55,6 @@ const permission = {
         } else {
           accessedRouters = filterAsyncRouter(asyncRouterMap, roles)
         }
-        console.info('============permission======')
-        console.info(accessedRouters)
         commit('SET_ROUTERS', accessedRouters)
         resolve()
       })

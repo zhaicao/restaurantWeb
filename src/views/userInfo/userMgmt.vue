@@ -3,18 +3,18 @@
     <div class="filter-container">
       <el-input
         placeholder="用户名/工号"
-        v-model="listQuery.title"
+        v-model="listQuery.loginName"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
       <el-input
         placeholder="姓名"
-        v-model="listQuery.title"
+        v-model="listQuery.realName"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
-      <el-select v-model="listQuery.roles"
+      <el-select v-model="listQuery.role"
                  placeholder="角色"
                  clearable style="width: 90px"
                  class="filter-item">
@@ -25,7 +25,7 @@
       </el-select>
       <el-input
         placeholder="联系电话"
-        v-model="listQuery.title"
+        v-model="listQuery.phone"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
@@ -41,16 +41,15 @@
       border
       fit
       highlight-current-row
-      style="width: 100%;"
-      @sort-change="sortChange">
+      style="width: 100%;">
       <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
         <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
+          <span>{{ scope.$index+1 }}</span>
         </template>
       </el-table-column>
       <el-table-column label="用户名/工号" width="200px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.userName }}</span>
+          <span>{{ scope.row.loginName }}</span>
         </template>
       </el-table-column>
       <el-table-column label="姓名" width="245px" align="center">
@@ -60,7 +59,7 @@
       </el-table-column>
       <el-table-column label="角色" align="center" width="200px">
         <template slot-scope="scope">
-          <el-tag>{{ scope.row.role | typeFilter }}</el-tag>
+          <el-tag>{{ scope.row.role | roleFilter }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="联系电话" align="center" min-width="150px">
@@ -71,25 +70,27 @@
       <el-table-column label="操作" align="center" width="300px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-button type="danger" size="mini"  @click="handleModifyStatus(scope.row,'deleted')">删除</el-button>
+          <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!--\Table-->
 
     <!--分页插件-->
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="getList" />
 
     <!--Dialog-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="userForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
         <el-form-item label="角色" prop="role">
           <el-select v-model="userForm.role" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in userRoles" :key="item.value" :label="item.label" :value="item.value"/>
+            <template v-for="item in userRoles">
+              <el-option :key="item.value" :label="item.label" :value="item.value" v-if="item.value != -1"/>
+            </template>
           </el-select>
         </el-form-item>
-        <el-form-item label="用户名" prop="userName">
-          <el-input v-model="userForm.userName"/>
+        <el-form-item label="用户名" prop="loginName" v-if="dialogStatus==='create'">
+          <el-input v-model="userForm.loginName"/>
         </el-form-item>
         <el-form-item label="姓名" prop="realName">
           <el-input v-model="userForm.realName"/>
@@ -104,6 +105,7 @@
       </div>
     </el-dialog>
     <!--\Dialog-->
+
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
         <el-table-column prop="key" label="Channel"/>
@@ -118,13 +120,16 @@
 </template>
 
 <script>
-import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
+import { getUserList, addUser, updateUser, deleteUser } from '@/api/user'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
-import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
+import Pagination from '@/components/Pagination'
 
 // 定义角色对应列表
 const userRoles = [{
+  value: -1,
+  label: '全部'
+  },{
   value: 0,
   label: '管理员'
   },{
@@ -146,16 +151,8 @@ export default {
   components: { Pagination },
   directives: { waves },
   filters: {
-    statusFilter(status) {
-      const statusMap = {
-        published: 'success',
-        draft: 'info',
-        deleted: 'danger'
-      }
-      return statusMap[status]
-    },
-    // 角色根据ID显示名字
-    typeFilter(roleVal) {
+    // 角色根据role显示名字
+    roleFilter(roleVal) {
       return userRolesTypeKeyValue[roleVal]
     }
   },
@@ -167,25 +164,24 @@ export default {
       listLoading: true,
       // 查询数据和分页数据
       listQuery: {
-        page: 1,
-        limit: 10,
-        role: undefined,
-        title: undefined,
-        type: undefined,
-        sort: '+id'
+        currentPage: 1,
+        pageSize: 10,
+        userId: undefined,
+        loginName: undefined,
+        realName: undefined,
+        role: -1,
+        phone: undefined
       },
       // 角色
       userRoles,
-      sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
-      statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
-      // Dialog中数据
+      // Dialog数据
       userForm: {
         id: undefined,
         role: 0,
-        userName: '',
-        realName: '',
-        phone: ''
+        loginName: undefined,
+        realName: undefined,
+        phone: undefined
       },
       // 默认Dialog表单不可见
       dialogFormVisible: false,
@@ -200,7 +196,7 @@ export default {
       // 表单rules
       rules: {
         role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-        userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+        loginName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
       },
@@ -214,18 +210,18 @@ export default {
     // 获取数据
     getList() {
       this.listLoading = true
-      fetchList(this.listQuery).then(response => {
-        this.list = response.data.items
-        this.total = response.data.total
+      getUserList(this.listQuery).then(response => {
+        this.list = response.data.data.records
+        this.total = response.data.data.total
         // Just to simulate the time of the request
         setTimeout(() => {
           this.listLoading = false
-        }, 1 * 1000)
+        }, 0.5 * 1000)
       })
     },
     // 过滤
     handleFilter() {
-      this.listQuery.page = 1
+      this.listQuery.currentPage = 1
       this.getList()
     },
     // 修改操作状态
@@ -236,28 +232,14 @@ export default {
       })
       row.status = status
     },
-    sortChange(data) {
-      const { prop, order } = data
-      if (prop === 'id') {
-        this.sortByID(order)
-      }
-    },
-    sortByID(order) {
-      if (order === 'ascending') {
-        this.listQuery.sort = '+id'
-      } else {
-        this.listQuery.sort = '-id'
-      }
-      this.handleFilter()
-    },
     // 重置表单
     resetForm() {
       this.userForm = {
         id: undefined,
         role: 0,
-        userName: '',
-        realName: '',
-        phone: ''
+        loginName: undefined,
+        realName: undefined,
+        phone: undefined
       }
     },
     // 添加按钮事件
@@ -273,24 +255,25 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          //调用API
-          createArticle(this.userForm).then(() => {
-            this.list.unshift(this.userForm)
-            this.dialogFormVisible = false
-            this.$notify({
-              title: '成功',
-              message: '创建成功',
-              type: 'success',
-              duration: 2000
-            })
-            console.info(this.list)
+          // 增加用户API
+          addUser(this.userForm).then(res => {
+            if (res.data.code === 200) {
+              this.list.unshift(this.userForm)
+              this.dialogFormVisible = false
+              this.$notify({
+                title: '成功',
+                message: '创建成功',
+                type: 'success',
+                duration: 2000
+              })
+            } else
+                this.$message.error(res.data.message);
           })
         }
       })
     },
     // 修改按钮事件
     handleUpdate(row) {
-      console.info(row)
       this.userForm = Object.assign({}, row) // copy obj
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
@@ -298,17 +281,17 @@ export default {
         this.$refs['dataForm'].clearValidate()
       })
     },
-    // Dialog更新事件
+    // Dialog更新用户
     updateData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.userForm)
-          tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-          updateArticle(tempData).then(() => {
+          updateUser(tempData).then(res => {
+            // 页面更新
             for (const v of this.list) {
-              if (v.id === this.userForm.id) {
+              if (v.uid === this.userForm.uid) {
                 const index = this.list.indexOf(v)
-                this.list.splice(userMgmt, 1, this.userForm)
+                this.list.splice(index, 1, this.userForm)
                 break
               }
             }
@@ -325,22 +308,27 @@ export default {
     },
     // 删除按钮事件
     handleDelete(row) {
-      this.$notify({
-        title: '成功',
-        message: '删除成功',
-        type: 'success',
-        duration: 2000
-      })
-      const index = this.list.indexOf(row)
-      this.list.splice(userMgmt, 1)
+      this.$confirm('此操作将删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteUser(row.uid).then(res => {
+          if (res.data.code === 200) {
+            this.$notify({
+              title: '成功',
+              message: '删除成功',
+              type: 'success',
+              duration: 2000
+            })
+            const index = this.list.indexOf(row)
+            this.list.splice(index, 1)
+          } else
+            this.$message.error(res.data.message);
+        })
+      }).catch(() => {});
     },
-/*    handleFetchPv(pv) {
-      fetchPv(pv).then(response => {
-        this.pvData = response.data.pvData
-        this.dialogPvVisible = true
-      })
-    },*/
-    // 表单内容转Jason
+    // 格式化Json
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => {
         if (j === 'timestamp') {

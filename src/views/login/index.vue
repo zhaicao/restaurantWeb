@@ -52,14 +52,12 @@
 </template>
 
 <script>
-import { isvalidUsername } from '@/utils/validate'
 import LangSelect from '@/components/LangSelect'
-import SocialSign from './socialsignin'
-import user from "../../store/modules/user";
+// import user from "../../store/modules/user";
 
 export default {
   name: 'Login',
-  components: { LangSelect, SocialSign },
+  components: { LangSelect },
   data() {
     const validateUsername = (rule, value, callback) => {
       if (value === '') {
@@ -97,12 +95,6 @@ export default {
     }
 
   },
-  created() {
-    // window.addEventListener('hashchange', this.afterQRScan)
-  },
-  destroyed() {
-    // window.removeEventListener('hashchange', this.afterQRScan)
-  },
   methods: {
     showPwd() {
       if (this.passwordType === 'password') {
@@ -138,6 +130,8 @@ export default {
         }
       })
     },
+
+    // 扫描登录
     afterQRScan() {
       // const hash = window.location.hash.slice(1)
       // const hashObj = getQueryObject(hash)

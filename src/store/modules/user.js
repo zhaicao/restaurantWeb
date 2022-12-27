@@ -1,41 +1,18 @@
-import { loginByUsername, logout, getUserInfo } from '@/api/login'
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import { loginByUsername, logout } from '@/api/login'
+import { getUserInfo } from '@/api/user'
+import { getToken, setToken, removeToken, setUser, getUser, removeUser } from '@/utils/auth'
 
 const user = {
-  // state: {
-  //   user: '',
-  //   status: '',
-  //   code: '',
-  //   token: getToken(),
-  //   name: '',
-  //   avatar: '',
-  //   introduction: '',
-  //   roles: [],
-  //   setting: {
-  //     articlePlatform: []
-  //   }
-  // },
   state: {
-    user: '',
+    name: '',
+    avatar: '',
+    introduction: '',
     token: getToken(),
     roles: []
   },
-
   mutations: {
-    SET_CODE: (state, code) => {
-      state.code = code
-    },
     SET_TOKEN: (state, token) => {
       state.token = token
-    },
-    SET_INTRODUCTION: (state, introduction) => {
-      state.introduction = introduction
-    },
-    SET_SETTING: (state, setting) => {
-      state.setting = setting
-    },
-    SET_STATUS: (state, status) => {
-      state.status = status
     },
     SET_NAME: (state, name) => {
       state.name = name
@@ -43,32 +20,27 @@ const user = {
     SET_AVATAR: (state, avatar) => {
       state.avatar = avatar
     },
+    SET_INTRODUCTION: (state, introduction) => {
+      state.introduction = introduction
+    },
     SET_ROLES: (state, roles) => {
       state.roles = roles
-    },
-    SET_USER: (state, user) => {
-      state.user = user
-    },
-    // SET_TOKEN: (state, token) => {
-    //   state.token = token
-    // }
+    }
   },
 
   actions: {
-    // 用户名登录的Action
-    LoginByUsername({ commit }, userInfo) {
-      const username = userInfo.loginName.trim()
+    // 登录action
+    LoginByUsername({ commit }, loginUser) {
+      const username = loginUser.loginName.trim()
       return new Promise((resolve, reject) => {
-        loginByUsername(username, userInfo.password).then(response => {
-          const data = response.data
-          // 设置store中token和User
-          if (data.code === 200) {
-            commit('SET_TOKEN', data.data.token)
-            commit('SET_USER', data.data.user)
-            // 设置cookies中token
-            setToken('admin')
-          }
-          resolve(data)
+        loginByUsername(username, loginUser.password).then(response => {
+          if (response.data.code === 200) {
+            commit('SET_TOKEN', response.data.data.token)
+            // 设置用户uid及token
+            setToken(response.data.data.token)
+            setUser(response.data.data.user.uid)
+            resolve(response.data)
+          } else { reject('error') }
         }).catch(error => {
           reject(error)
         })
@@ -78,50 +50,30 @@ const user = {
     // 获取用户信息
     GetUserInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
-        const userMap = {
-          admin: {
-            roles: ['admin'],
-            token: 'admin',
-            introduction: '我是超级管理员',
-            avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-            name: 'Super Admin'
-          },
-          editor: {
-            roles: ['chef'],
-            token: 'chef',
-            introduction: '我是厨师',
-            avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-            name: 'Normal Chef'
+        getUserInfo(getUser()).then(res => {
+          let roles = []
+          if (res.data.code === 200) {
+            if (res.data.data.role === 0) {
+              roles.push('admin')
+            } else if (res.data.data.role === 1) {
+              roles.push('waiter')
+            } else if (res.data.data.role === 2) {
+              roles.push('chef')
+            } else {
+              roles.push('error')
+            }
+            // 设置用户信息
+            commit('SET_ROLES', roles)
+            commit('SET_NAME', res.data.data.loginName)
+            commit('SET_AVATAR', 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif')
+            commit('SET_INTRODUCTION', res.data.data.realName)
+          } else {
+            reject('error')
           }
-        }
-        console.info('==============================')
-        console.info(user.state)
-        const data = userMap['admin']
-        commit('SET_ROLES', data.roles)
-        commit('SET_NAME', data.name)
-        commit('SET_AVATAR', data.avatar)
-        commit('SET_INTRODUCTION', data.introduction)
-        resolve(data)
-        // getUserInfo(state.token).then(response => {
-        //   if (!response.data) { // 由于mockjs 不支持自定义状态码只能这样hack
-        //     reject('GetUserInfo Error')
-        //   }
-        //   const data = response.data
-        //
-        //   if (data.roles && data.roles.length > 0) { // 验证返回的roles是否是一个非空数组
-        //     commit('SET_ROLES', data.roles)
-        //   } else {
-        //     reject('getInfo: roles must be a non-null array !')
-        //   }
-        //   commit('SET_NAME', data.name)
-        //   commit('SET_AVATAR', data.avatar)
-        //   commit('SET_INTRODUCTION', data.introduction)
-        //   console.info('===================getUserInfo==========================')
-        //   console.info(response)
-        //   resolve(response)
-        // }).catch(error => {
-        //   reject(error)
-        // })
+          resolve(roles)
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
 
@@ -146,6 +98,7 @@ const user = {
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           removeToken()
+          removeUser()
           resolve()
         }).catch(error => {
           reject(error)
@@ -166,7 +119,7 @@ const user = {
     ChangeRoles({ commit, dispatch }, role) {
       return new Promise(resolve => {
         commit('SET_TOKEN', role)
-        setToken(role)
+        removeToken(role)
         getUserInfo(role).then(response => {
           const data = response.data
           commit('SET_ROLES', data.roles)

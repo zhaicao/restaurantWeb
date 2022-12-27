@@ -1,9 +1,10 @@
 import request from '@/utils/request'
 
+/*
+登录接口
+* */
 export function loginByUsername(username, password) {
   const data = {
-    // username,
-    // password
     'loginName': username,
     'password': password
   }
@@ -14,18 +15,12 @@ export function loginByUsername(username, password) {
   })
 }
 
+/*
+退出接口（模拟）
+* */
 export function logout() {
   return request({
     url: '/login/logout',
     method: 'post'
   })
 }
-
-export function getUserInfo(token) {
-  return request({
-    url: '/user/info',
-    method: 'get',
-    params: { token }
-  })
-}
-

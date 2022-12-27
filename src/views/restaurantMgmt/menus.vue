@@ -40,9 +40,9 @@
         <template slot-scope="scope">
           <el-image
             style="width: 200px; height: 160px"
-            :src="require('@/assets/images/profile.gif')"
-            :preview-src-list="require('@/assets/images/profile.gif')">
-          </el-image>
+            :src="img.src"
+            :preview-src-list="img.previewList"
+          />
         </template>
       </el-table-column>
       <el-table-column label="菜品" width="340px" align="center">
@@ -169,6 +169,12 @@
           title: undefined,
           type: undefined,
           sort: '+id'
+        },
+        img: {
+          src: 'http://localhost:8090/upload_file/2022-12-22/91962336ceb7430aa0383a26a25d13c3.jpg',
+          previewList: ['http://localhost:8090/upload_file/2022-12-22/91962336ceb7430aa0383a26a25d13c3.jpg',
+                    'https://fuss10.elemecdn.com/8/27/f01c15bb73e1ef3793e64e6b7bbccjpeg.jpeg',
+                    'https://fuss10.elemecdn.com/1/8e/aeffeb4de74e2fde4bd74fc7b4486jpeg.jpeg']
         },
         menuCategory,
         sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
@@ -343,6 +349,9 @@
             return v[j]
           }
         }))
+      },
+      onPreview(){
+        console.info('preview');
       }
     }
   }
