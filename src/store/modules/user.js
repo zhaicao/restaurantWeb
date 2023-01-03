@@ -4,6 +4,7 @@ import { getToken, setToken, removeToken, setUser, getUser, removeUser } from '@
 
 const user = {
   state: {
+    userId: '',
     name: '',
     avatar: '',
     introduction: '',
@@ -11,6 +12,9 @@ const user = {
     roles: []
   },
   mutations: {
+    SET_USERID: (state, userId) => {
+      state.userId = userId
+    },
     SET_TOKEN: (state, token) => {
       state.token = token
     },
@@ -33,14 +37,15 @@ const user = {
     LoginByUsername({ commit }, loginUser) {
       const username = loginUser.loginName.trim()
       return new Promise((resolve, reject) => {
-        loginByUsername(username, loginUser.password).then(response => {
-          if (response.data.code === 200) {
-            commit('SET_TOKEN', response.data.data.token)
+        loginByUsername(username, loginUser.password).then(res => {
+          if (res.data.code === 200) {
+            commit('SET_TOKEN', res.data.data.token)
+            commit('SET_USERID', res.data.data.user.uid)
             // 设置用户uid及token
-            setToken(response.data.data.token)
-            setUser(response.data.data.user.uid)
-            resolve(response.data)
-          } else { reject('error') }
+            setToken(res.data.data.token)
+            setUser(res.data.data.user.uid)
+          }
+          resolve(res.data)
         }).catch(error => {
           reject(error)
         })
@@ -63,6 +68,7 @@ const user = {
               roles.push('error')
             }
             // 设置用户信息
+            commit('SET_USERID', res.data.data.uid)
             commit('SET_ROLES', roles)
             commit('SET_NAME', res.data.data.loginName)
             commit('SET_AVATAR', 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif')

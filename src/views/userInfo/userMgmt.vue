@@ -69,8 +69,11 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="300px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
+          <div class="operation-column">
+            <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+            <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="warning" size="small"  @click="handleResetPwd(scope.row)" v-if="scope.row.uid != userId">重置密码</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -105,22 +108,11 @@
       </div>
     </el-dialog>
     <!--\Dialog-->
-
-    <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
-      <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
-        <el-table-column prop="key" label="Channel"/>
-        <el-table-column prop="pv" label="Pv"/>
-      </el-table>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialogPvVisible = false">{{ $t('table.confirm') }}</el-button>
-      </span>
-    </el-dialog>
-
   </div>
 </template>
 
 <script>
-import { getUserList, addUser, updateUser, deleteUser } from '@/api/user'
+import { getUserList, addUser, updateUser, deleteUser, resetPwd } from '@/api/user'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination'
@@ -174,7 +166,7 @@ export default {
       },
       // 角色
       userRoles,
-      showReviewer: false,
+      userId: this.$store.state.user.userId,
       // Dialog数据
       userForm: {
         id: undefined,
@@ -191,8 +183,6 @@ export default {
         update: '编辑',
         create: '添加'
       },
-      dialogPvVisible: false,
-      pvData: [],
       // 表单rules
       rules: {
         role: [{ required: true, message: '请选择角色', trigger: 'change' }],
@@ -216,7 +206,7 @@ export default {
         // Just to simulate the time of the request
         setTimeout(() => {
           this.listLoading = false
-        }, 0.5 * 1000)
+        }, 1 * 1000)
       })
     },
     // 过滤
@@ -337,7 +327,30 @@ export default {
           return v[j]
         }
       }))
+    },
+    // 重置密码
+    handleResetPwd(row) {
+      this.$confirm('此操作将重置该用户登录密码, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        resetPwd(row.uid).then(res => {
+          if (res.data.code === 200)
+            this.$message.success('该用户密码重置成功')
+          else
+            this.$message.error('重置失败，请联系管理员')
+        })
+      }).catch(() => {})
     }
   }
 }
 </script>
+
+<style scoped>
+  .operation-column {
+    text-align: left;
+    margin-left: 10%;
+  }
+
+</style>

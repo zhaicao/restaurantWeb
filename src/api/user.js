@@ -59,3 +59,13 @@ export function deleteUser(userId) {
   })
 }
 
+/*
+通过userId重置用户密码
+* */
+export function resetPwd(userId) {
+  return request({
+    url: '/user/resetUserPassword/' + userId,
+    method: 'put'
+  })
+}
+

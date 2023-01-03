@@ -3,12 +3,12 @@
     <div class="filter-container">
       <el-input
         placeholder="菜品"
-        v-model="listQuery.title"
+        v-model="listQuery.menuName"
         style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
-      <el-select v-model="listQuery.roles"
+      <el-select v-model="listQuery.menuType"
                  placeholder="种类"
                  clearable style="width: 90px"
                  class="filter-item">
@@ -29,65 +29,71 @@
       border
       fit
       highlight-current-row
-      style="width: 100%;"
-      @sort-change="sortChange">
+      style="width: 100%;">
       <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
         <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
+          <span>{{ scope.$index+1 }}</span>
         </template>
       </el-table-column>
       <el-table-column label="图片" width="350px" align="center">
         <template slot-scope="scope">
           <el-image
             style="width: 200px; height: 160px"
-            :src="img.src"
-            :preview-src-list="img.previewList"
+            :src="baseUrl + '/' + scope.row.menuImgBasicPath + '/' + scope.row.menuImg"
+            :preview-src-list="[baseUrl + '/' + scope.row.menuImgBasicPath + '/' + scope.row.menuImg]"
           />
         </template>
       </el-table-column>
       <el-table-column label="菜品" width="340px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.realName }}</span>
+          <span>{{ scope.row.menuName }}</span>
         </template>
       </el-table-column>
       <el-table-column label="种类" align="center" width="140px">
         <template slot-scope="scope">
-          <el-tag>{{ scope.row.role | typeFilter }}</el-tag>
+          <el-tag>{{ scope.row.menuType | typeFilter }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="价格（元）" width="200px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.forecast }}</span>
+          <span>{{ scope.row.menuPrice.toFixed(2) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" min-width="200px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-button type="danger" size="mini"  @click="handleModifyStatus(scope.row,'deleted')">删除</el-button>
+          <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!--\Table-->
 
     <!--分页插件-->
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="getList" />
 
     <!--Dialog-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="menuForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
+      <el-form ref="dataForm" :rules="rules" :model="menuForm" label-position="left" label-width="95px" style="width: 400px; margin-left:50px;">
         <el-form-item label="种类" prop="category">
-          <el-select v-model="menuForm.category" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in menuCategory" :key="item.value" :label="item.label" :value="item.value"/>
+          <el-select v-model="menuForm.menuType" class="filter-item" placeholder="Please select">
+            <template v-for="item in menuCategory">
+              <el-option :key="item.value" :label="item.label" :value="item.value" v-if="item.value!='all'"/>
+            </template>
           </el-select>
         </el-form-item>
-        <el-form-item label="菜品" prop="dish">
-          <el-input v-model="menuForm.dish"/>
+        <el-form-item label="菜品" prop="menuName">
+          <el-input v-model="menuForm.menuName"/>
         </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input v-model="menuForm.price"/>
+        <el-form-item label="价格（元）" prop="menuPrice">
+          <el-input v-model="menuForm.menuPrice"/>
         </el-form-item>
-        <el-form-item label="图片" prop="image">
-          <UploadImages/>
+        <el-form-item label="图片" prop="menuImage">
+          <UploadImages
+            ref="uploadImage"
+            :menuImage="menuForm.menuImage"
+            :key="new Date().getTime()"
+            @getImageList="getImageList">
+          </UploadImages>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -96,21 +102,12 @@
       </div>
     </el-dialog>
     <!--\Dialog-->
-    <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
-      <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
-        <el-table-column prop="key" label="Channel"/>
-        <el-table-column prop="pv" label="Pv"/>
-      </el-table>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialogPvVisible = false">{{ $t('table.confirm') }}</el-button>
-      </span>
-    </el-dialog>
 
   </div>
 </template>
 
 <script>
-  import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
+  import { getMenuList , updateMenu, addMenu, deleteMenu } from '@/api/menu'
   import waves from '@/directive/waves' // Waves directive
   import { parseTime } from '@/utils'
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
@@ -118,17 +115,20 @@
 
   // 定义角色对应列表
   const menuCategory = [{
-    value: 1,
+    value: 'all',
+    label: '全部',
+  },{
+    value: 'staple',
     label: '主食'
   },{
-    value: 2,
+    value: 'snack',
     label: '小吃'
   },{
-    value: 3,
+    value: 'drink',
     label: '饮品'
   }]
 
-  // arr to obj ,such as { 0 : "管理员", 1 : "服务员" }
+  // arr to obj ,such as { 'admin' : "管理员", 'waiter' : "服务员" }
   const menuTypeKeyValue = menuCategory.reduce((acc, cur) => {
     acc[cur.value] = cur.label
     return acc
@@ -139,17 +139,9 @@
     components: { Pagination, UploadImages },
     directives: { waves },
     filters: {
-      statusFilter(status) {
-        const statusMap = {
-          published: 'success',
-          draft: 'info',
-          deleted: 'danger'
-        }
-        return statusMap[status]
-      },
-      // 角色根据ID显示名字
+      // 根据id显示种类名字
       typeFilter(menuCate) {
-        if (menuCate == 1 || menuCate == 2 || menuCate == 3)
+        if (menuCate === 'staple' || menuCate === 'snack' || menuCate === 'drink')
           return menuTypeKeyValue[menuCate]
         else
           return 'Other'
@@ -161,32 +153,22 @@
         list: null,
         total: 0,
         listLoading: true,
+        baseUrl: process.env.BASE_API, // 默认URl前缀
         // 查询数据和分页数据
         listQuery: {
-          page: 1,
-          limit: 10,
-          role: undefined,
-          title: undefined,
-          type: undefined,
-          sort: '+id'
-        },
-        img: {
-          src: 'http://localhost:8090/upload_file/2022-12-22/91962336ceb7430aa0383a26a25d13c3.jpg',
-          previewList: ['http://localhost:8090/upload_file/2022-12-22/91962336ceb7430aa0383a26a25d13c3.jpg',
-                    'https://fuss10.elemecdn.com/8/27/f01c15bb73e1ef3793e64e6b7bbccjpeg.jpeg',
-                    'https://fuss10.elemecdn.com/1/8e/aeffeb4de74e2fde4bd74fc7b4486jpeg.jpeg']
+          currentPage: 1,
+          pageSize: 10,
+          menuName: undefined,
+          menuType: 'all'
         },
         menuCategory,
-        sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
-        statusOptions: ['published', 'draft', 'deleted'],
-        showReviewer: false,
         // Dialog中数据
         menuForm: {
-          id: undefined,
-          category: 1,
-          dish: '',
-          price: '',
-          image: ''
+          foodId: undefined,
+          menuType: 'staple',
+          menuName: undefined,
+          menuPrice: undefined,
+          menuImage: []
         },
         // 默认Dialog表单不可见
         dialogFormVisible: false,
@@ -200,9 +182,9 @@
         pvData: [],
         // 表单rules
         rules: {
-          dish: [{ required: true, message: '请输入菜品名', trigger: 'blur' }],
-          price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-          image: [{ required: true, message: '请上传菜品图片', trigger: 'blur' }],
+          menuName: [{ required: true, message: '请输入菜品名', trigger: 'blur' }],
+          menuPrice: [{ required: true, message: '请输入价格', trigger: 'blur' }],
+          //menuImage: [{ required: true, message: '请上传菜品图片', trigger: 'blur' }],
         },
         downloadLoading: false
       }
@@ -214,9 +196,9 @@
       // 获取数据
       getList() {
         this.listLoading = true
-        fetchList(this.listQuery).then(response => {
-          this.list = response.data.items
-          this.total = response.data.total
+        getMenuList(this.listQuery).then(res => {
+          this.list = res.data.data.records
+          this.total = res.data.data.total
           // Just to simulate the time of the request
           setTimeout(() => {
             this.listLoading = false
@@ -253,11 +235,11 @@
       // 重置表单
       resetForm() {
         this.menuForm = {
-          id: undefined,
-          category: 1,
-          dish: '',
-          price: '',
-          image: ''
+          foodId: undefined,
+          menuType: 'staple',
+          menuName: undefined,
+          menuPrice: undefined,
+          menuImage: []
         }
       },
       // 添加按钮事件
@@ -269,29 +251,37 @@
           this.$refs['dataForm'].clearValidate()
         })
       },
-      // Dialog-添加事件
+      // Dialog-添加
       createData() {
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             //调用API
-            createArticle(this.menuForm).then(() => {
-              this.list.unshift(this.menuForm)
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '创建成功',
-                type: 'success',
-                duration: 2000
-              })
-              console.info(this.list)
+            this.$refs.uploadImage.handleImageList() // 子组件往父组件传值
+            addMenu(this.menuForm).then(res => {
+              if (res.data.code === 200) {
+                this.menuForm = res.data.data // 后端上传的数据赋值给表单
+                this.list.unshift(this.menuForm)
+                this.dialogFormVisible = false
+                this.$notify({
+                  title: '成功',
+                  message: '创建成功',
+                  type: 'success',
+                  duration: 2000
+                })
+                this.resetForm() //重置表单内容
+              } else
+                this.$message.error(res.data.message)
             })
           }
         })
       },
       // 修改按钮事件
       handleUpdate(row) {
-        console.info(row)
-        this.menuForm = Object.assign({}, row) // copy obj
+        this.menuForm = Object.assign({}, row)
+        // 设置图片回显
+        this.menuForm.menuImage = [{'url': this.baseUrl +
+            '/' + row.menuImgBasicPath +
+            '/' + row.menuImg}]
         this.dialogStatus = 'update'
         this.dialogFormVisible = true
         this.$nextTick(() => {
@@ -308,7 +298,7 @@
               for (const v of this.list) {
                 if (v.id === this.menuForm.id) {
                   const index = this.list.indexOf(v)
-                  this.list.splice(userMgmt, 1, this.menuForm)
+                  this.list.splice(index, 1, this.menuForm)
                   break
                 }
               }
@@ -325,21 +315,25 @@
       },
       // 删除按钮事件
       handleDelete(row) {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
-        })
-        const index = this.list.indexOf(row)
-        this.list.splice(userMgmt, 1)
+        this.$confirm('此操作将删除该菜品, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          deleteMenu(row.foodId).then(res => {
+            if (res.data.code === 200) {
+              this.$notify({
+                title: '成功',
+                message: '删除成功',
+                type: 'success',
+                duration: 2000
+              })
+              const index = this.list.indexOf(row)
+              this.list.splice(index, 1)
+            }
+          })
+        }).catch(() => {})
       },
-      /*    handleFetchPv(pv) {
-            fetchPv(pv).then(response => {
-              this.pvData = response.data.pvData
-              this.dialogPvVisible = true
-            })
-          },*/
       // 表单内容转Jason
       formatJson(filterVal, jsonData) {
         return jsonData.map(v => filterVal.map(j => {
@@ -350,8 +344,9 @@
           }
         }))
       },
-      onPreview(){
-        console.info('preview');
+      // 子组件调用向父组件menuImage赋值
+      getImageList(data){
+        this.menuForm.menuImage = data
       }
     }
   }

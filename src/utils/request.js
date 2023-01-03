@@ -5,23 +5,23 @@ import { getToken } from '@/utils/auth'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: process.env.BASE_API, // api 的 base_url
-  timeout: 5000 // request timeout
+  baseURL: process.env.BASE_API, // api的前缀地址
+  timeout: 5000 // 超时时间
 })
 
 // request interceptor
 service.interceptors.request.use(
   config => {
-    // Do something before request is sent
+    // 请求前所做操作
     if (store.getters.token) {
-      // 让每个请求携带token-- ['X-Token']为自定义key
-      config.headers['token'] = getToken()
+      // 让每个请求携带token
+      config.headers['token'] = getToken() // 获取local storage中token
     }
     return config
   },
   error => {
-    // Do something with request error
-    console.log(error) // for debug
+    // 异常时操作
+    console.log(error)
     Promise.reject(error)
   }
 )

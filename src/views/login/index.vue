@@ -103,6 +103,7 @@ export default {
         this.passwordType = 'password'
       }
     },
+    //登录事件
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
