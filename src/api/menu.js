@@ -15,30 +15,40 @@ export function getMenuList(queryParams) {
 * */
 export function addMenu(menuForm) {
   // 使用formdata的方式，后端读取MultipartFile
-  let format = new window.FormData()
-  format.append('file', menuForm.menuImage)
+  const format = new window.FormData()
+  format.append('file', menuForm.menuImg[0].raw)
   return request({
     url: '/menu/addMenu',
     method: 'post',
-    params: menuForm,
+    params: { // 不可直接传menuForm，因为menuImg是array且有file对象，会导致跨域错误
+      'menuName': menuForm.menuName,
+      'menuType': menuForm.menuType,
+      'menuPrice': menuForm.menuPrice
+    },
     data: format
   })
 }
 /*
 更新菜品
 * */
-export function updateMenu(userForm) {
+export function updateMenu(menuForm) {
+  const format = new window.FormData()
+  // 判断是否更新图片，若选择文件则有raw属性
+  if (menuForm.menuImg[0].hasOwnProperty('raw'))
+    format.append('file', menuForm.menuImg[0].raw)
+  else
+    // 若无raw则传一个空File，后端会处理不更新文件
+    format.append('file', new File([''], ''))
   return request({
-    url: '/user/updateUser/' + userForm.uid,
-    method: 'put',
-    data: userForm, // 若body使用formData，需要使用transformRequest
-    transformRequest: [data => {
-      let ret = ''
-      for (let item in data) {
-        ret += encodeURIComponent(item) + '=' + encodeURIComponent(data[item]) + '&'
-      }
-      return ret
-    }]
+    url: '/menu/updateMenu/',
+    method: 'post',
+    params: { // 不可直接传menuForm，因为menuImg是array且有file对象，会导致跨域错误
+      'foodId': menuForm.foodId,
+      'menuName': menuForm.menuName,
+      'menuType': menuForm.menuType,
+      'menuPrice': menuForm.menuPrice
+    },
+    data: format
   })
 }
 

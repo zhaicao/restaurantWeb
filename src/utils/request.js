@@ -28,7 +28,18 @@ service.interceptors.request.use(
 
 // response interceptor
 service.interceptors.response.use(
-  response => response,
+  response => {
+    const res = response.data
+    // 处理Token失效
+    if (res.code === 500 && res.message === 'token校验失败') {
+      console.error('token失效')
+      Message.error('Token失效，请重新登录')
+      store.dispatch('LogOut').then(() => {
+        location.reload()
+      })
+    }
+    return response
+  },
   /**
    * 下面的注释为通过在response里，自定义code来标示请求状态
    * 当code返回如下情况则说明权限有问题，登出并返回到登录页

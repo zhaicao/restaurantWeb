@@ -87,11 +87,10 @@
         <el-form-item label="价格（元）" prop="menuPrice">
           <el-input v-model="menuForm.menuPrice"/>
         </el-form-item>
-        <el-form-item label="图片" prop="menuImage">
+        <el-form-item label="图片" prop="menuImg">
           <UploadImages
             ref="uploadImage"
-            :menuImage="menuForm.menuImage"
-            :key="new Date().getTime()"
+            :menuImage="menuForm.menuImg"
             @getImageList="getImageList">
           </UploadImages>
         </el-form-item>
@@ -109,7 +108,6 @@
 <script>
   import { getMenuList , updateMenu, addMenu, deleteMenu } from '@/api/menu'
   import waves from '@/directive/waves' // Waves directive
-  import { parseTime } from '@/utils'
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
   import UploadImages from "./component/uploadImages";
 
@@ -148,6 +146,14 @@
       }
     },
     data() {
+      // 图片上传校验规则
+      const fileUploadValidate = (rule, value, callback) => {
+        if (this.menuForm.menuImg.length === 0) {
+            // 未上传文件
+            callback("menuImage is required");
+          }
+          callback();
+        }
       return {
         tableKey: 0,
         list: null,
@@ -168,7 +174,7 @@
           menuType: 'staple',
           menuName: undefined,
           menuPrice: undefined,
-          menuImage: []
+          menuImg: []
         },
         // 默认Dialog表单不可见
         dialogFormVisible: false,
@@ -183,8 +189,9 @@
         // 表单rules
         rules: {
           menuName: [{ required: true, message: '请输入菜品名', trigger: 'blur' }],
-          menuPrice: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-          //menuImage: [{ required: true, message: '请上传菜品图片', trigger: 'blur' }],
+          menuPrice: [{ required: true, message: '请输入价格', trigger: 'blur' },
+                      { pattern: /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/, message: '请输入数字，可保留两位小数', trigger: 'blur'}],
+          menuImg: [{ required: true, message: '请选择菜品图片', trigger: 'blur', validator: fileUploadValidate }],
         },
         downloadLoading: false
       }
@@ -197,12 +204,12 @@
       getList() {
         this.listLoading = true
         getMenuList(this.listQuery).then(res => {
-          this.list = res.data.data.records
-          this.total = res.data.data.total
-          // Just to simulate the time of the request
-          setTimeout(() => {
-            this.listLoading = false
-          }, 1 * 1000)
+            this.list = res.data.data.records
+            this.total = res.data.data.total
+            // Just to simulate the time of the request
+            setTimeout(() => {
+              this.listLoading = false
+            }, 1 * 1000)
         })
       },
       // 过滤
@@ -224,14 +231,6 @@
           this.sortByID(order)
         }
       },
-      sortByID(order) {
-        if (order === 'ascending') {
-          this.listQuery.sort = '+id'
-        } else {
-          this.listQuery.sort = '-id'
-        }
-        this.handleFilter()
-      },
       // 重置表单
       resetForm() {
         this.menuForm = {
@@ -239,7 +238,7 @@
           menuType: 'staple',
           menuName: undefined,
           menuPrice: undefined,
-          menuImage: []
+          menuImg: []  // menuImg为array类型，新增时为[]，回显格式[{'url': 'http://xxx'}]
         }
       },
       // 添加按钮事件
@@ -256,7 +255,6 @@
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             //调用API
-            this.$refs.uploadImage.handleImageList() // 子组件往父组件传值
             addMenu(this.menuForm).then(res => {
               if (res.data.code === 200) {
                 this.menuForm = res.data.data // 后端上传的数据赋值给表单
@@ -279,7 +277,7 @@
       handleUpdate(row) {
         this.menuForm = Object.assign({}, row)
         // 设置图片回显
-        this.menuForm.menuImage = [{'url': this.baseUrl +
+        this.menuForm.menuImg = [{'url': this.baseUrl +
             '/' + row.menuImgBasicPath +
             '/' + row.menuImg}]
         this.dialogStatus = 'update'
@@ -292,23 +290,26 @@
       updateData() {
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
-            const tempData = Object.assign({}, this.menuForm)
-            tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-            updateArticle(tempData).then(() => {
-              for (const v of this.list) {
-                if (v.id === this.menuForm.id) {
-                  const index = this.list.indexOf(v)
-                  this.list.splice(index, 1, this.menuForm)
-                  break
+            const formData = Object.assign({}, this.menuForm)
+            updateMenu(formData).then(res => {
+              if (res.data.code === 200) {
+                for (const v of this.list) {
+                  if (v.foodId === this.menuForm.foodId) {
+                    const index = this.list.indexOf(v)
+                    // 将后端返回的最新修改数据加到List
+                    this.list.splice(index, 1, res.data.data)
+                    break
+                  }
                 }
-              }
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '更新成功',
-                type: 'success',
-                duration: 2000
-              })
+                this.dialogFormVisible = false
+                this.$notify({
+                  title: '成功',
+                  message: '更新成功',
+                  type: 'success',
+                  duration: 2000
+                })
+              } else
+                this.$message.error(res.data.message)
             })
           }
         })
@@ -334,19 +335,12 @@
           })
         }).catch(() => {})
       },
-      // 表单内容转Jason
-      formatJson(filterVal, jsonData) {
-        return jsonData.map(v => filterVal.map(j => {
-          if (j === 'timestamp') {
-            return parseTime(v[j])
-          } else {
-            return v[j]
-          }
-        }))
-      },
-      // 子组件调用向父组件menuImage赋值
+      /**
+       * 子组件文件选择、删除、改变时调用，用来向父组件menuImg赋值
+       * @param data el-update的file-list，格式Array
+       */
       getImageList(data){
-        this.menuForm.menuImage = data
+          this.menuForm.menuImg = data
       }
     }
   }
