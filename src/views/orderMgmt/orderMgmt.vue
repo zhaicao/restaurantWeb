@@ -1,36 +1,33 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input
-        placeholder="用户名/工号"
-        v-model="listQuery.loginName"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"/>
-
-      <el-input
-        placeholder="姓名"
-        v-model="listQuery.realName"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"/>
-      <el-select v-model="listQuery.role"
-                 placeholder="用户角色"
+      <el-select v-model="listQuery.orderStatus"
+                 placeholder="订单状态"
                  clearable style="width: 110px"
                  class="filter-item">
-        <el-option v-for="item in userRoles"
+        <el-option v-for="item in orderStatus"
                    :key="item.value"
                    :label="item.label"
                    :value="item.value"/>
       </el-select>
-      <el-input
-        placeholder="联系电话"
-        v-model="listQuery.phone"
-        style="width: 200px;"
-        class="filter-item"
-        @keyup.enter.native="handleFilter"/>
+      <el-date-picker
+          v-model="listQuery.startDate"
+          type="date"
+          placeholder="开始日期"
+          clearable style="width: 150px"
+          class="filter-item"
+          :picker-options="datePickerOptions">
+      </el-date-picker>
+      <span>-</span>
+      <el-date-picker
+          v-model="listQuery.endDate"
+          type="date"
+          placeholder="结束日期"
+          clearable style="width: 150px"
+          class="filter-item"
+          :picker-options="datePickerOptions">
+      </el-date-picker>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
     </div>
 
     <!--Table-->
@@ -47,33 +44,34 @@
           <span>{{ scope.$index+1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户名/工号" width="200px" align="center">
+      <el-table-column label="订单号" width="260px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.loginName }}</span>
+          <span>{{ scope.row.orderId }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="姓名" width="245px" align="center">
+      <el-table-column label="菜品" width="300px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.realName }}</span>
+          <span>{{ scope.row.orderdetail }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="角色" align="center" width="200px">
+      <el-table-column label="状态" width="120px" align="center">
         <template slot-scope="scope">
-          <el-tag>{{ scope.row.role | roleFilter }}</el-tag>
+          <el-tag>{{ scope.row.orderStatus | orderStatusFilter }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="联系电话" align="center" min-width="150px">
+      <el-table-column label="总价" align="center" width="200px">
         <template slot-scope="scope">
-          <span>{{ scope.row.phone }}</span>
+          <span>{{ scope.row.orderPrice.toFixed(2) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="下单时间" align="center" min-width="170px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.orderDate }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="300px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <div class="operation-column">
-            <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
-            <el-button type="warning" size="small"  @click="handleResetPwd(scope.row)" v-if="scope.row.uid != userId">重置密码</el-button>
-          </div>
+            <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">查看</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -85,13 +83,6 @@
     <!--Dialog-->
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="35%">
       <el-form ref="dataForm" :rules="rules" :model="userForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" class="filter-item" placeholder="Please select">
-            <template v-for="item in userRoles">
-              <el-option :key="item.value" :label="item.label" :value="item.value" v-if="item.value != -1"/>
-            </template>
-          </el-select>
-        </el-form-item>
         <el-form-item label="用户名" prop="loginName" v-if="dialogStatus==='create'">
           <el-input v-model="userForm.loginName"/>
         </el-form-item>
@@ -112,37 +103,37 @@
 </template>
 
 <script>
-import { getUserList, addUser, updateUser, deleteUser, resetPwd } from '@/api/user'
+import { getOrderList } from '@/api/order'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination'
 
 // 定义角色对应列表
-const userRoles = [{
-  value: 0,
-  label: '管理员'
+const orderStatus = [{
+  value: '未上菜',
+  label: '新下单'
   },{
-  value: 1,
-  label: '服务员'
+  value: '已上菜',
+  label: '已上菜'
   },{
-  value: 2,
-  label: '厨师'
+  value: '已付款',
+  label: '已付款'
   }]
 
 // arr to obj ,such as { 0 : "管理员", 1 : "服务员" }
-const userRolesTypeKeyValue = userRoles.reduce((acc, cur) => {
+const orderStatusKeyValue = orderStatus.reduce((acc, cur) => {
   acc[cur.value] = cur.label
   return acc
 }, {})
 
 export default {
-  name: 'UserMgmt',
+  name: 'OrderMgmt',
   components: { Pagination },
   directives: { waves },
   filters: {
-    // 角色根据role显示名字
-    roleFilter(roleVal) {
-      return userRolesTypeKeyValue[roleVal]
+    // 显示订单状态
+    orderStatusFilter(Val) {
+      return orderStatusKeyValue[Val]
     }
   },
   data() {
@@ -155,14 +146,12 @@ export default {
       listQuery: {
         currentPage: 1,
         pageSize: 10,
-        userId: undefined,
-        loginName: undefined,
-        realName: undefined,
-        role: undefined,
-        phone: undefined
+        orderStatus: undefined,
+        startDate: undefined,
+        endDate: undefined
       },
-      // 角色
-      userRoles,
+      // 订单状态
+      orderStatus,
       userId: this.$store.state.user.userId,
       // Dialog数据
       userForm: {
@@ -187,7 +176,13 @@ export default {
         realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
       },
-      downloadLoading: false
+      downloadLoading: false,
+      datePickerOptions: {
+        disabledDate(time) {
+          // 禁止选择未来日期（可以选择今天）
+          return time.getTime() > Date.now();
+        }
+      }
     }
   },
   created() {
@@ -197,7 +192,7 @@ export default {
     // 获取数据
     getList() {
       this.listLoading = true
-      getUserList(this.listQuery).then(response => {
+      getOrderList(this.listQuery).then(response => {
         this.list = response.data.data.records
         this.total = response.data.data.total
         // Just to simulate the time of the request
@@ -337,9 +332,4 @@ export default {
 </script>
 
 <style scoped>
-  .operation-column {
-    text-align: left;
-    margin-left: 10%;
-  }
-
 </style>

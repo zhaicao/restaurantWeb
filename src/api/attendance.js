@@ -4,10 +4,21 @@ import request from '@/utils/request'
 获取考勤列表
 * */
 export function getAttendanceList(queryParams) {
+  let type = -1
+  // 处理页面role为null或undefined时，设置为-1
+  if (queryParams.attendanceType !== '' && queryParams.attendanceType !== null && typeof queryParams.attendanceType !== 'undefined')
+    type = queryParams.attendanceType
   return request({
     url: '/attendance/getAttendanceList',
     method: 'get',
-    params: queryParams
+    params: {
+      'currentPage': queryParams.currentPage,
+      'pageSize': queryParams.pageSize,
+      'loginName': queryParams.loginName,
+      'realName': queryParams.realName,
+      'userId': queryParams.userId,
+      'attendanceType': type
+    }
   })
 }
 /*

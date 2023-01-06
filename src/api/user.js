@@ -4,10 +4,22 @@ import request from '@/utils/request'
 获取用户列表
 * */
 export function getUserList(queryParams) {
+  let role = -1
+  // 处理页面role为null或undefined时，设置为-1
+  if (queryParams.role !== '' && queryParams.role !== null && typeof queryParams.role !== 'undefined')
+    role = queryParams.role
   return request({
     url: '/user/getUserList',
     method: 'get',
-    params: queryParams
+    params: {
+      'currentPage': queryParams.currentPage,
+      'pageSize': queryParams.pageSize,
+      'userId': queryParams.userId,
+      'loginName': queryParams.loginName,
+      'realName': queryParams.realName,
+      'role': role,
+      'phone': queryParams.phone
+    }
   })
 }
 

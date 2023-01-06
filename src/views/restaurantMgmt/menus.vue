@@ -35,7 +35,7 @@
           <span>{{ scope.$index+1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="图片" width="350px" align="center">
+      <el-table-column label="图片" width="220px" align="center">
         <template slot-scope="scope">
           <el-image
             style="width: 200px; height: 160px"
@@ -72,7 +72,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="getList" />
 
     <!--Dialog-->
-    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
+    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="35%">
       <el-form ref="dataForm" :rules="rules" :model="menuForm" label-position="left" label-width="95px" style="width: 400px; margin-left:50px;">
         <el-form-item label="种类" prop="category">
           <el-select v-model="menuForm.menuType" class="filter-item" placeholder="Please select">
@@ -111,7 +111,7 @@
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
   import UploadImages from "./component/uploadImages";
 
-  // 定义角色对应列表
+  // 定义类别列表
   const menuCategory = [{
     value: 'all',
     label: '全部',
@@ -165,7 +165,7 @@
           currentPage: 1,
           pageSize: 10,
           menuName: undefined,
-          menuType: 'all'
+          menuType: undefined
         },
         menuCategory,
         // Dialog中数据

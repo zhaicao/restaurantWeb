@@ -3,13 +3,22 @@
     <div class="filter-container">
       <el-input
         placeholder="包间/桌号"
-        v-model="listQuery.title"
-        style="width: 200px;"
+        v-model="listQuery.tableName"
+        clearable style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
+      <el-select v-model="listQuery.tableUse"
+                 placeholder="状态"
+                 clearable style="width: 90px"
+                 class="filter-item">
+        <el-option v-for="item in tableCategory"
+                   :key="item.value"
+                   :label="item.label"
+                   :value="item.value"/>
+      </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button class="filter-item" style="margin-right: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
+      <el-button class="filter-item" style="margin-right: 10px; float: right;" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
     </div>
 
     <!--Table-->
@@ -20,47 +29,52 @@
       border
       fit
       highlight-current-row
-      style="width: 100%;"
-      @sort-change="sortChange">
+      style="width: 100%;">
       <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
         <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
+          <span>{{ scope.$index+1 }}</span>
         </template>
       </el-table-column>
       <el-table-column label="包间/桌号" width="240px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.userName }}</span>
+          <span>{{ scope.row.tableName }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" width="140px">
+        <template slot-scope="scope">
+          <el-tag>{{ scope.row.tableUse | typeFilter }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="描述" min-width="300px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.realName }}</span>
+          <span>{{ scope.row.tableDescription }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" min-width="200px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-          <el-button type="danger" size="mini"  @click="handleModifyStatus(scope.row,'deleted')">删除</el-button>
+          <el-button type="danger" size="mini"  @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
     <!--\Table-->
 
     <!--分页插件-->
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="getList" />
 
     <!--Dialog-->
-    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="seatForm" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="包间/桌号" prop="seatName">
-          <el-input v-model="seatForm.seatName"/>
+    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" width="35%">
+      <el-form ref="dataForm" :rules="rules" :model="seatForm" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="包间/桌号" prop="tableName">
+          <el-input v-model="seatForm.tableName"/>
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input
             type="textarea"
             placeholder="请输入内容"
-            v-model="seatForm.description"
+            v-model="seatForm.tableDescription"
             maxlength="50"
+            :rows="5"
             show-word-limit
           >
           </el-input>
@@ -72,36 +86,27 @@
       </div>
     </el-dialog>
     <!--\Dialog-->
-    <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
-      <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
-        <el-table-column prop="key" label="Channel"/>
-        <el-table-column prop="pv" label="Pv"/>
-      </el-table>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialogPvVisible = false">{{ $t('table.confirm') }}</el-button>
-      </span>
-    </el-dialog>
 
   </div>
 </template>
 
 <script>
-  import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
+  import { getTableList, addSeat, updateSeat, deleteSeat } from '@/api/seat'
   import waves from '@/directive/waves' // Waves directive
   import { parseTime } from '@/utils'
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
 
-  // 定义角色对应列表
-  const attendanceType = [{
+  // 定义类别列表
+  const tableCategory = [{
     value: 0,
-    label: '正常'
+    label: '空闲'
   },{
     value: 1,
-    label: '请假'
+    label: '使用'
   }]
 
-  // arr to obj ,such as { 0 : "管理员", 1 : "服务员" }
-  const attendanceTypeKeyValue = attendanceType.reduce((acc, cur) => {
+  // arr to obj ,such as { 'admin' : "管理员", 'waiter' : "服务员" }
+  const tableTypeKeyValue = tableCategory.reduce((acc, cur) => {
     acc[cur.value] = cur.label
     return acc
   }, {})
@@ -111,46 +116,44 @@
     components: { Pagination },
     directives: { waves },
     filters: {
-      statusFilter(status) {
-        const statusMap = {
-          published: 'success',
-          draft: 'info',
-          deleted: 'danger'
-        }
-        return statusMap[status]
-      },
-      // 角色根据ID显示名字
+      // 桌号显示名字
       typeFilter(attType) {
         if (attType == 0 || attType == 1)
-          return attendanceTypeKeyValue[attType]
+          return tableTypeKeyValue[attType]
         else
           return 'Other'
       }
     },
     data() {
+      // 图片上传校验规则
+      const descriptionValidate = (rule, value, callback) => {
+        if (this.seatForm.tableDescription == null)
+          callback('description is required')
+        else
+          callback()
+      }
+
       return {
         tableKey: 0,
         list: null,
         total: 0,
         listLoading: true,
+        tableCategory,
         // 查询数据和分页数据
         listQuery: {
-          page: 1,
-          limit: 10,
-          role: undefined,
-          title: undefined,
-          type: undefined,
-          sort: '+id'
+          currentPage: 1,
+          pageSize: 10,
+          tableId: undefined,
+          tableName: undefined,
+          tableUse: undefined
         },
-        attendanceType,
-        sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
-        statusOptions: ['published', 'draft', 'deleted'],
         showReviewer: false,
         // Dialog中数据
         seatForm: {
-          id: undefined,
-          seatName: '',
-          description: ''
+          tableId: undefined,
+          tableName: undefined,
+          tableUse: undefined,
+          tableDescription: undefined
         },
         // 默认Dialog表单不可见
         dialogFormVisible: false,
@@ -160,11 +163,10 @@
           update: '编辑',
           create: '添加'
         },
-        dialogPvVisible: false,
-        pvData: [],
         // 表单rules
         rules: {
-          seatName: [{ required: true, message: '请输入桌号/包间', trigger: 'change' }]
+          tableName: [{ required: true, message: '请输入包间或桌号', trigger: 'blur' }],
+          description: [{ required: true, message: '请输入描述', trigger: 'blur', validator: descriptionValidate }]
         },
         downloadLoading: false
       }
@@ -176,48 +178,27 @@
       // 获取数据
       getList() {
         this.listLoading = true
-        fetchList(this.listQuery).then(response => {
-          this.list = response.data.items
-          this.total = response.data.total
+        getTableList(this.listQuery).then(res => {
+          this.list = res.data.data.records
+          this.total = res.data.data.total
           // Just to simulate the time of the request
           setTimeout(() => {
             this.listLoading = false
           }, 1 * 1000)
         })
       },
-      // 过滤
+      // 查询
       handleFilter() {
-        this.listQuery.page = 1
+        this.listQuery.currentPage = 1
         this.getList()
-      },
-      // 修改操作状态
-      handleModifyStatus(row, status) {
-        this.$message({
-          message: '操作成功',
-          type: 'success'
-        })
-        row.status = status
-      },
-      sortChange(data) {
-        const { prop, order } = data
-        if (prop === 'id') {
-          this.sortByID(order)
-        }
-      },
-      sortByID(order) {
-        if (order === 'ascending') {
-          this.listQuery.sort = '+id'
-        } else {
-          this.listQuery.sort = '-id'
-        }
-        this.handleFilter()
       },
       // 重置表单
       resetForm() {
         this.seatForm = {
-          id: undefined,
-          seatName: '',
-          description: ''
+          tableId: undefined,
+          tableName: undefined,
+          tableUse: undefined,
+          tableDescription: undefined
         }
       },
       // 添加按钮事件
@@ -233,24 +214,26 @@
       createData() {
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
-            //调用API
-            createArticle(this.seatForm).then(() => {
-              this.list.unshift(this.seatForm)
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '创建成功',
-                type: 'success',
-                duration: 2000
-              })
-              console.info(this.list)
+            // 增加用户API
+            addSeat(this.seatForm).then(res => {
+              if (res.data.code === 200) {
+                this.list.unshift(res.data.data)
+                this.dialogFormVisible = false
+                this.$notify({
+                  title: '成功',
+                  message: '创建成功',
+                  type: 'success',
+                  duration: 2000
+                })
+                this.total += 1 //记录条数+1
+              } else
+                this.$message.error(res.data.message);
             })
           }
         })
       },
       // 修改按钮事件
       handleUpdate(row) {
-        console.info(row)
         this.seatForm = Object.assign({}, row) // copy obj
         this.dialogStatus = 'update'
         this.dialogFormVisible = true
@@ -263,52 +246,50 @@
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             const tempData = Object.assign({}, this.seatForm)
-            tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-            updateArticle(tempData).then(() => {
-              for (const v of this.list) {
-                if (v.id === this.seatForm.id) {
-                  const index = this.list.indexOf(v)
-                  this.list.splice(userMgmt, 1, this.seatForm)
-                  break
+            updateSeat(tempData).then(res => {
+              if (res.data.code === 200) {
+                for (const v of this.list) {
+                  if (v.tableId === this.seatForm.tableId) {
+                    const index = this.list.indexOf(v)
+                    this.list.splice(index, 1, tempData)
+                    break
+                  }
                 }
-              }
-              this.dialogFormVisible = false
-              this.$notify({
-                title: '成功',
-                message: '更新成功',
-                type: 'success',
-                duration: 2000
-              })
+                this.dialogFormVisible = false
+                this.$notify({
+                  title: '成功',
+                  message: '更新成功',
+                  type: 'success',
+                  duration: 2000
+                })
+              } else
+                this.$message.error(res.data.message)
             })
           }
         })
       },
       // 删除按钮事件
       handleDelete(row) {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
-        })
-        const index = this.list.indexOf(row)
-        this.list.splice(userMgmt, 1)
-      },
-      /*    handleFetchPv(pv) {
-            fetchPv(pv).then(response => {
-              this.pvData = response.data.pvData
-              this.dialogPvVisible = true
-            })
-          },*/
-      // 表单内容转Jason
-      formatJson(filterVal, jsonData) {
-        return jsonData.map(v => filterVal.map(j => {
-          if (j === 'timestamp') {
-            return parseTime(v[j])
-          } else {
-            return v[j]
-          }
-        }))
+        this.$confirm('此操作将删除该包间/桌位, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          deleteSeat(row.tableId).then(res => {
+            if (res.data.code === 200) {
+              this.$notify({
+                title: '成功',
+                message: '删除成功',
+                type: 'success',
+                duration: 2000
+              })
+              const index = this.list.indexOf(row)
+              this.list.splice(index, 1)
+              this.total -= 1 //记录条数-1
+            } else
+              this.$message.error(res.data.message)
+          })
+        }).catch(() => {})
       }
     }
   }

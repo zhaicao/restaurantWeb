@@ -15,8 +15,8 @@
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
       <el-select v-model="listQuery.attendanceType"
-                 placeholder="考勤类型"
-                 clearable style="width: 110px"
+                 placeholder="类型"
+                 clearable style="width: 90px"
                  class="filter-item">
         <el-option v-for="item in attendanceType"
                    :key="item.value"
@@ -103,6 +103,9 @@
 
   // 定义角色对应列表
   const attendanceType = [{
+    value: -1,
+    label: '全部'
+  },{
     value: 0,
     label: '正常'
   },{
@@ -143,7 +146,7 @@
           realName: undefined,
           // 若是管理员则查看全部，非管理员仅查看自己的
           userId: this.$store.state.user.roles[0] === 'admin' ? undefined : this.$store.state.user.userId,
-          attendanceType: undefined
+          attendanceType: -1
         },
         attendanceType,
         // Dialog中数据

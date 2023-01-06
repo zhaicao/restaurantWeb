@@ -166,9 +166,9 @@ export const asyncRouterMap = [
     ]
   },
   {
-    path: '/table2',
+    path: '/order',
     component: Layout,
-    redirect: '/table2/complex-table3',
+    redirect: '/order/orderMgmt',
     name: 'Orders',
     meta: {
       title: '订单管理',
@@ -177,15 +177,15 @@ export const asyncRouterMap = [
     },
     children: [
       {
-        path: 'complex-table3',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable3',
+        path: 'dishMgmt',
+        component: () => import('@/views/orderMgmt/dishMgmt'),
+        name: 'DishMgmt',
         meta: { title: '新订单' }
       },
       {
-        path: 'complex-table4',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable4',
+        path: 'orderMgmt',
+        component: () => import('@/views/orderMgmt/orderMgmt'),
+        name: 'OrderMgmt',
         meta: { title: '订单列表' }
       }
     ]
