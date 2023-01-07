@@ -12,6 +12,7 @@
       </el-select>
       <el-date-picker
           v-model="listQuery.startDate"
+          value-format="yyyy-MM-dd"
           type="date"
           placeholder="开始日期"
           clearable style="width: 150px"
@@ -21,6 +22,7 @@
       <span>-</span>
       <el-date-picker
           v-model="listQuery.endDate"
+          value-format="yyyy-MM-dd"
           type="date"
           placeholder="结束日期"
           clearable style="width: 150px"
@@ -39,7 +41,49 @@
       fit
       highlight-current-row
       style="width: 100%;">
-      <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
+      <el-table-column type="expand">
+        <template slot-scope="scope">
+        <!-- childTable -->
+        <el-table
+          class="inline-table"
+          :data="scope.row.orderdetail"
+          border
+          style="width: 98%;">
+            <el-table-column label="品种" align="center" width="160px">
+              <template slot-scope="detail">
+                <span>{{ detail.row.menu.menuType | menuCategoryFilter }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="菜品" align="center" width="400px">
+              <template slot-scope="detail">
+              <span>{{ detail.row.menu.menuName }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="单价(元)" align="center" width="200px">
+              <template slot-scope="detail">
+                <span>{{ detail.row.menu.menuPrice.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+          <el-table-column label="数量" align="center" width="160px">
+            <template slot-scope="detail">
+              <span>{{ detail.row.odAmount }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="总价(元)" align="center" width="200px">
+            <template slot-scope="detail">
+              <span>{{ detail.row.odPrice.toFixed(2) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" align="center">
+            <template slot-scope="detail">
+              <el-tag :type="detail.row.odStatus === 1 ? 'success' : 'danger'">{{ detail.row.odStatus | menuStatusFilter }}</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+        <!-- /childTable -->
+        </template>
+      </el-table-column>
+      <el-table-column label="序号" prop="id" align="center" width="65px">
         <template slot-scope="scope">
           <span>{{ scope.$index+1 }}</span>
         </template>
@@ -49,9 +93,9 @@
           <span>{{ scope.row.orderId }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="菜品" width="300px" align="center">
+      <el-table-column label="菜品种类" width="300px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.orderdetail }}</span>
+          <span>{{ scope.row.orderdetail.length }}</span>
         </template>
       </el-table-column>
       <el-table-column label="状态" width="120px" align="center">
@@ -59,7 +103,7 @@
           <el-tag>{{ scope.row.orderStatus | orderStatusFilter }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="总价" align="center" width="200px">
+      <el-table-column label="总价(元)" align="center" width="200px">
         <template slot-scope="scope">
           <span>{{ scope.row.orderPrice.toFixed(2) }}</span>
         </template>
@@ -71,7 +115,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="300px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-            <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">查看</el-button>
+            <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -108,7 +152,7 @@ import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination'
 
-// 定义角色对应列表
+// 定义订单状态-List
 const orderStatus = [{
   value: '未上菜',
   label: '新下单'
@@ -119,6 +163,19 @@ const orderStatus = [{
   value: '已付款',
   label: '已付款'
   }]
+
+// 定义菜品状态-Object
+const menuStatus = {
+  0: '未上菜',
+  1: '已上菜'
+}
+
+// 定义菜品种类-Object
+const menuCategory = {
+  'staple': '主食',
+  'drink': '饮品',
+  'snack': '小吃'
+}
 
 // arr to obj ,such as { 0 : "管理员", 1 : "服务员" }
 const orderStatusKeyValue = orderStatus.reduce((acc, cur) => {
@@ -131,9 +188,17 @@ export default {
   components: { Pagination },
   directives: { waves },
   filters: {
-    // 显示订单状态
+    // 订单状态过滤器
     orderStatusFilter(Val) {
       return orderStatusKeyValue[Val]
+    },
+    // 菜品状态过滤器
+    menuStatusFilter(Val) {
+      return menuStatus[Val]
+    },
+    // 菜品状态过滤器
+    menuCategoryFilter(Val) {
+      return menuCategory[Val]
     }
   },
   data() {
@@ -199,6 +264,7 @@ export default {
         setTimeout(() => {
           this.listLoading = false
         }, 1 * 1000)
+        console.info(this.list)
       })
     },
     // 过滤
