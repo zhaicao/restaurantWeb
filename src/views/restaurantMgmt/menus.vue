@@ -4,7 +4,7 @@
       <el-input
         placeholder="菜品"
         v-model="listQuery.menuName"
-        style="width: 200px;"
+        clearable style="width: 200px;"
         class="filter-item"
         @keyup.enter.native="handleFilter"/>
 
@@ -29,8 +29,9 @@
       border
       fit
       highlight-current-row
-      style="width: 100%;">
-      <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
+      style="width: 100%;"
+      :header-cell-style="{background: '#F5F5F5'}">
+      <el-table-column label="序号" prop="id" align="center" width="65">
         <template slot-scope="scope">
           <span>{{ scope.$index+1 }}</span>
         </template>
@@ -113,9 +114,6 @@
 
   // 定义类别列表
   const menuCategory = [{
-    value: 'all',
-    label: '全部',
-  },{
     value: 'staple',
     label: '主食'
   },{
@@ -133,7 +131,7 @@
   }, {})
 
   export default {
-    name: 'MenusMgmt',
+    name: 'Menus',
     components: { Pagination, UploadImages },
     directives: { waves },
     filters: {

@@ -118,7 +118,7 @@
   }, {})
 
   export default {
-    name: 'Attendance',
+    name: 'Message',
     components: { Pagination, TakePhotos },
     directives: { waves },
     filters: {

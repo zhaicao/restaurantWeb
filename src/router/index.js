@@ -191,9 +191,9 @@ export const asyncRouterMap = [
     ]
   },
   {
-    path: '/table3',
+    path: '/message',
     component: Layout,
-    redirect: '/table3/complex-table5',
+    redirect: '/message/message',
     name: 'Message',
     meta: {
       title: '消息管理',
@@ -202,15 +202,9 @@ export const asyncRouterMap = [
     },
     children: [
       {
-        path: 'complex-table5',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable5',
-        meta: { title: '催单消息' }
-      },
-      {
-        path: 'complex-table6',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable6',
+        path: 'message',
+        component: () => import('@/views/messageMgmt/message'),
+        name: 'Message',
         meta: { title: '消息列表' }
       }
     ]
@@ -245,7 +239,8 @@ export const asyncRouterMap = [
     path: '/permission',
     component: Layout,
     redirect: '/permission/index',
-    alwaysShow: true, // will always show the root menu
+    hidden: true,
+    alwaysShow: false, // will always show the root menu
     // hidden: true,
     meta: {
       title: 'permission',

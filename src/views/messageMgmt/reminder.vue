@@ -137,7 +137,7 @@ const userRolesTypeKeyValue = userRoles.reduce((acc, cur) => {
 }, {})
 
 export default {
-  name: 'UserMgmt',
+  name: 'Reminder',
   components: { Pagination },
   directives: { waves },
   filters: {

@@ -29,8 +29,9 @@
       border
       fit
       highlight-current-row
-      style="width: 100%;">
-      <el-table-column label="序号" prop="id" sortable="custom" align="center" width="65">
+      style="width: 100%;"
+      :header-cell-style="{background: '#F5F5F5'}">
+      <el-table-column label="序号" prop="id" align="center" width="65">
         <template slot-scope="scope">
           <span>{{ scope.$index+1 }}</span>
         </template>
@@ -112,7 +113,7 @@
   }, {})
 
   export default {
-    name: 'SeatsMgmt',
+    name: 'Seats',
     components: { Pagination },
     directives: { waves },
     filters: {

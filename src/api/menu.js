@@ -40,8 +40,8 @@ export function updateMenu(menuForm) {
     // 若无raw则传一个空File，后端会处理不更新文件
     format.append('file', new File([''], ''))
   return request({
-    url: '/menu/updateMenu/',
-    method: 'post',
+    url: '/menu/updateMenu',
+    method: 'put',
     params: { // 不可直接传menuForm，因为menuImg是array且有file对象，会导致跨域错误
       'foodId': menuForm.foodId,
       'menuName': menuForm.menuName,
