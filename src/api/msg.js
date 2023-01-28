@@ -11,7 +11,7 @@ export function getMsgList(msgForm) {
       'currentPage': 1,
       'pageSize': 10,
       'msgOrderId': '',
-      'msgType': 1,
+      'msgType': -1,
       'startDate': '',
       'endDate': ''
     }
@@ -37,7 +37,7 @@ export function getMsgListByOrderIdAndType(orderId, msgType) {
 }
 
 /**
- * 处理催单消息
+ * 处理单个催单消息
  * @param msgId 消息Id
  * @returns {*} request
  */

@@ -41,7 +41,7 @@
 
     <!--Table-->
     <el-table
-      ref="foodList"
+      ref="orderTable"
       v-loading="listLoading"
       :key="tableKey"
       :data="list"
@@ -288,7 +288,7 @@
             if (this.list.length === 0)
               this.getList()
             // 清空所选项
-            this.foodsSelection = []
+            this.$refs.orderTable.clearSelection()
           }
           else
             this.$message.error(res.data.message);

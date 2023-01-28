@@ -239,11 +239,6 @@ export default {
       // 默认Dialog表单不可见
       dialogFormVisible: false,
       dialogStatus: '',
-      // Dialog的Title
-      textMap: {
-        update: '编辑',
-        create: '添加'
-      },
       downloadLoading: false,
       datePickerOptions: {
         disabledDate(time) {
