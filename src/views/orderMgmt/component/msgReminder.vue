@@ -62,7 +62,7 @@
 </template>
 
 <script>
-  import { getMsgListByOrderIdAndType, solveUrgeMsg } from '@/api/msg'
+  import { getMsgListByOrderIdAndType, completeUrgeMsg } from '@/api/msg'
 
   export default {
     name: "MsgReminder",
@@ -102,7 +102,7 @@
       },
       // 处理催单
       handleUrgeFoods(row) {
-        solveUrgeMsg(row.messageId).then(res => {
+        completeUrgeMsg(row.messageId).then(res => {
           if (res.data.code === 200) {
             for (const v of this.urgeList) {
               if (v.messageId === row.messageId) {

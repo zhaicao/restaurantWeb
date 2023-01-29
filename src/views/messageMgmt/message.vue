@@ -4,8 +4,9 @@
       <el-input
         placeholder="订单号"
         v-model="listQuery.msgOrderId"
-        style="width: 200px;"
+        style="width: 288px;"
         class="filter-item"
+        clearable
         @keyup.enter.native="handleFilter"/>
 
       <el-select v-model="listQuery.msgType"
@@ -21,7 +22,8 @@
       <el-select v-model="listQuery.isComplete"
                  placeholder="是否处理"
                  clearable style="width: 110px"
-                 class="filter-item">
+                 class="filter-item"
+                 v-show="listQuery.msgType === 1">
         <el-option v-for="(val, key) in isCompleteMapping"
                    :key="key"
                    :label="val"
@@ -134,7 +136,7 @@
 </template>
 
 <script>
-  import { getMsgList } from '@/api/msg'
+  import { getMsgList, completeUrgeMsg } from '@/api/msg'
   import waves from '@/directive/waves' // Waves directive
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
 
@@ -234,31 +236,44 @@
       handleUrgeFoods(row) {
         // 单个处理
         if (row != null || row != undefined) {
-          this.urgeFoodsSelection = []
-          this.urgeFoodsSelection.push(row)
+          this.urgeFoodsSelection = [row]
         }
         // 批量选择
         if (this.urgeFoodsSelection.length === 0) {
           this.$message.warning('请选择催单消息')
           return
         }
-        // 页面更新
+        // 拼接messageId
+        let msgIds = ''
         for (let val of this.urgeFoodsSelection) {
-          for (let item of this.list ) {
-            if (item.messageId === val.messageId) {
-              let index = this.list.indexOf(val)
-              val.messageComplete = 1 // 催单设置已完成
-              this.list.splice(index, 1, val)
-            }
-          }
+          if (msgIds != '')
+            msgIds += ','
+          msgIds += val.messageId
         }
-        // 清空选项
-        this.$refs.msgTable.clearSelection()
-        this.$notify({
-          title: '成功',
-          message: '催单处理成功',
-          type: 'success',
-          duration: 2000
+        completeUrgeMsg(msgIds).then(res => {
+          if (res.data.code === 200) {
+            // 页面更新
+            for (let val of this.urgeFoodsSelection) {
+              for (let item of this.list ) {
+                if (item.messageId === val.messageId) {
+                  let index = this.list.indexOf(val)
+                  val.messageComplete = 1 // 催单设置已完成
+                  this.list.splice(index, 1, val)
+                }
+              }
+            }
+            // 清空选项
+            this.urgeFoodsSelection = []
+            this.$refs.msgTable.clearSelection()
+
+            this.$notify({
+              title: '成功',
+              message: '催单处理成功',
+              type: 'success',
+              duration: 2000
+            })
+          } else
+            this.$message.error(res.data.message)
         })
       },
       // 复选框检查-消息类型为1且未处理的催单可选中
