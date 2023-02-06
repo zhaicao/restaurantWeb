@@ -228,14 +228,6 @@ export default {
       },
       // 订单状态
       orderStatus,
-      // Dialog数据
-      userForm: {
-        id: undefined,
-        role: 0,
-        loginName: undefined,
-        realName: undefined,
-        phone: undefined
-      },
       // 默认Dialog表单不可见
       dialogFormVisible: false,
       dialogStatus: '',
@@ -332,7 +324,7 @@ export default {
       if (column.property === 'msgComponent')
         return
       if (this.expands.includes(row.orderId)) {
-        this.expands = this.expands.filter(val => val !== row.orderId);
+        this.expands = this.expands.filter(val => val != row.orderId);
       } else {
         this.expands.push(row.orderId);
       }

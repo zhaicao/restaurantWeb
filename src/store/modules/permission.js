@@ -50,7 +50,7 @@ const permission = {
         const { roles } = data
         let accessedRouters
         // 根据权限设定可访问的路由表
-        if (roles.includes('admin')) {
+        if (roles.includes('supperadmin')) { // 超级管理员拥有all
           accessedRouters = asyncRouterMap
         } else {
           accessedRouters = filterAsyncRouter(asyncRouterMap, roles)

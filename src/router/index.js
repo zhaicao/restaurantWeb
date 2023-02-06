@@ -64,20 +64,7 @@ export const constantRouterMap = [
     component: () => import('@/views/errorPage/401'),
     hidden: true
   },
-  {
-    path: '',
-    component: Layout,
-    redirect: 'dashboard',
-    children: [
-      {
-        path: 'dashboard',
-        component: () => import('@/views/dashboard/index'),
-        name: 'Dashboard',
-        meta: { title: 'dashboard', icon: 'dashboard', noCache: true }
-      }
-    ]
-  },
-  {
+/*  {
     path: '/documentation',
     component: Layout,
     redirect: '/documentation/index',
@@ -90,8 +77,8 @@ export const constantRouterMap = [
         meta: { title: 'documentation', icon: 'documentation', noCache: true }
       }
     ]
-  },
-  {
+  },*/
+/*  {
     path: '/guide',
     component: Layout,
     redirect: '/guide/index',
@@ -104,7 +91,7 @@ export const constantRouterMap = [
         meta: { title: 'guide', icon: 'guide', noCache: true }
       }
     ]
-  }
+  }*/
 ]
 
 export default new Router({
@@ -116,6 +103,22 @@ export default new Router({
 // 动态路由
 export const asyncRouterMap = [
   {
+    path: '', // 默认主页，故path为空且路由配置只有一个为空
+    component: Layout,
+    redirect: 'dashboard',
+    meta: {
+      roles: ['admin', 'chef']
+    },
+    children: [
+      {
+        path: 'dashboard',
+        component: () => import('@/views/dashboard/index'),
+        name: 'Dashboard',
+        meta: { title: 'dashboard', icon: 'dashboard', noCache: true }
+      }
+    ]
+  },
+  {
     path: '/userInfo',
     component: Layout,
     redirect: '/userInfo/userMgmt',
@@ -123,20 +126,26 @@ export const asyncRouterMap = [
     meta: {
       title: '人员管理',
       icon: 'peoples',
-      roles: ['admin']
+      roles: ['admin', 'chef']
     },
     children: [
       {
         path: 'userMgmt',
         component: () => import('@/views/userInfo/userMgmt'),
         name: 'UserMgmt',
-        meta: { title: '用户管理' }
+        meta: {
+          title: '用户管理',
+          roles: ['admin']
+        }
       },
       {
         path: 'attendance',
         component: () => import('@/views/userInfo/attendance'),
         name: 'Attendance',
-        meta: { title: '考勤管理' }
+        meta: {
+          title: '考勤管理',
+          roles: ['admin', 'chef']
+        }
       }
     ]
   },
@@ -168,7 +177,7 @@ export const asyncRouterMap = [
   {
     path: '/order',
     component: Layout,
-    redirect: '/order/orderMgmt',
+    redirect: '/order/dishMgmt',
     name: 'Orders',
     meta: {
       title: '订单管理',
@@ -180,21 +189,26 @@ export const asyncRouterMap = [
         path: 'dishMgmt',
         component: () => import('@/views/orderMgmt/dishMgmt'),
         name: 'DishMgmt',
-        meta: { title: '新订单' }
+        meta: {
+          title: '新订单',
+          roles: ['admin', 'chef']
+        }
       },
       {
         path: 'orderMgmt',
         component: () => import('@/views/orderMgmt/orderMgmt'),
         name: 'OrderMgmt',
-        meta: { title: '订单列表' }
+        meta: {
+          title: '订单列表',
+          roles: ['admin']
+        }
       }
     ]
   },
   {
     path: '/message',
     component: Layout,
-    redirect: '/message/message',
-    name: 'Message',
+    redirect: 'message',
     meta: {
       title: '消息管理',
       icon: 'message',
@@ -202,7 +216,7 @@ export const asyncRouterMap = [
     },
     children: [
       {
-        path: 'message',
+        path: '',
         component: () => import('@/views/messageMgmt/message'),
         name: 'Message',
         meta: { title: '消息列表' }
@@ -210,42 +224,49 @@ export const asyncRouterMap = [
     ]
   },
   {
-    path: '/table4',
+    path: '/revenue',
     component: Layout,
-    redirect: '/table4/complex-table7',
-    name: 'Chart',
+    redirect: 'revenue',
     meta: {
-      title: '营收情况',
       icon: 'chart',
       roles: ['admin']
     },
     children: [
       {
-        path: 'complex-table7',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable7',
-        meta: { title: '营收列表' }
-      },
-      {
-        path: 'complex-table8',
-        component: () => import('@/views/table/complexTable'),
-        name: 'ComplexTable8',
-        meta: { title: '统计图' }
+        path: '',
+        component: () => import('@/views/statistics/revenue'),
+        name: 'Revenue',
+        meta: { title: '营收情况' }
       }
     ]
   },
-
+  {
+    path: '/seats',
+    component: () => import('@/views/reception/seats'),
+    hidden: false,
+    meta: {
+      roles: ['waiter']
+    }
+  },
+  {
+    path: '/menu/:seatId',
+    component: () => import('@/views/reception/menu'),
+    hidden: false,
+    meta: {
+      roles: ['waiter']
+    }
+  },
+  /* =============================================================================== */
   {
     path: '/permission',
     component: Layout,
     redirect: '/permission/index',
     hidden: true,
     alwaysShow: false, // will always show the root menu
-    // hidden: true,
     meta: {
       title: 'permission',
       icon: 'lock',
-      roles: ['admin', 'chef'] // you can set roles in root nav
+      roles: ['admin'] // you can set roles in root nav
     },
     children: [
       {

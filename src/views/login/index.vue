@@ -117,7 +117,7 @@ export default {
                 this.$router.push({ path: this.redirect || '/' })
               else if (user.role === 1)
                 // To Order
-                this.$router.push({ path: this.redirect || '/' })
+                this.$router.push({ path: '/seats' })
               else
                 this.$message.error('Roles Error')
             }else

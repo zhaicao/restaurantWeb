@@ -101,6 +101,7 @@
   import waves from '@/directive/waves' // Waves directive
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
   import TakePhotos from '@/views/userInfo/component/takePhoto'
+  import {mapGetters} from "vuex";
 
   // 定义角色对应列表
   const attendanceType = [{
@@ -143,13 +144,13 @@
           loginName: undefined,
           realName: undefined,
           // 若是管理员则查看全部，非管理员仅查看自己的
-          userId: this.$store.state.user.roles[0] === 'admin' ? undefined : this.$store.state.user.userId,
+          userId: undefined,
           attendanceType: undefined
         },
         attendanceType,
         // Dialog中数据
         attendanceForm: {
-          userId: this.$store.state.user.userId,
+          userId: undefined,
           attendanceType: undefined,
         },
         // 默认Dialog表单不可见
@@ -162,7 +163,16 @@
         }
       }
     },
+    computed: {
+      ...mapGetters([
+        'userId',
+        'roles'
+      ])
+    },
     created() {
+      // 计算属性无法直接在data中赋值
+      this.listQuery.userId = this.roles[0] === 'admin' ? undefined : this.userId
+      this.attendanceForm.userId = this.userId
       this.getList()
     },
     methods: {
@@ -177,6 +187,7 @@
       // 获取数据
       getList() {
         this.listLoading = true
+        console.info(this.listQuery)
         getAttendanceList(this.listQuery).then(res => {
           this.list = res.data.data.records
           this.total = res.data.data.total
@@ -202,6 +213,7 @@
       },
       // Dialog-签到事件
       punchInData() {
+        console.info(this.attendanceForm)
         addAttendance(this.attendanceForm).then(res => {
           if (res.data.code === 200) {
             this.$notify({
@@ -230,7 +242,6 @@
           } else
             this.$message.error(res.data.message)
         })
-
       },
       handleLeave() {
         this.$confirm('确定请假?', '提示', {
@@ -244,7 +255,6 @@
             } else
               this.$message.error(res.data.message)
           })
-
         }).catch(() => {})
       },
       // 删除按钮事件

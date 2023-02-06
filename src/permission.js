@@ -23,7 +23,7 @@ function handleRolesError(err, next) {
 
 const whiteList = ['/login', '/auth-redirect']// no redirect whitelist
 
-// 每次切换页面判断permission
+// 每次切换页面前判断permission
 router.beforeEach((to, from, next) => {
   NProgress.start() // start progress bar
   if (getToken()) { // determine if there has token

@@ -1,57 +1,26 @@
 <template>
   <div class="dashboard-editor-container">
-
     <!--基础数据看板-->
-<!--    <panel-group @handleSetLineChartData="handleSetLineChartData"/>-->
     <panel-group/>
     <!--折线图-->
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
       <line-chart :chart-data="lineChartData"/>
     </el-row>
 
-<!--    &lt;!&ndash;饼图/柱状图&ndash;&gt;
-    <el-row :gutter="32">
-      <el-col :xs="24" :sm="24" :lg="8">
-        <div class="chart-wrapper">
-          <raddar-chart/>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="24" :lg="8">
-        <div class="chart-wrapper">
-          <pie-chart/>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="24" :lg="8">
-        <div class="chart-wrapper">
-          <bar-chart/>
-        </div>
-      </el-col>
-    </el-row>-->
-
-<!--    <el-row :gutter="8">
-      <el-col :xs="{span: 24}" :sm="{span: 24}" :md="{span: 24}" :lg="{span: 12}" :xl="{span: 12}" style="padding-right:8px;margin-bottom:30px;">
-        <transaction-table/>
-      </el-col>
-      <el-col :xs="{span: 24}" :sm="{span: 12}" :md="{span: 12}" :lg="{span: 6}" :xl="{span: 6}" style="margin-bottom:30px;">
-        <todo-list/>
-      </el-col>
-      <el-col :xs="{span: 24}" :sm="{span: 12}" :md="{span: 12}" :lg="{span: 6}" :xl="{span: 6}" style="margin-bottom:30px;">
-        <box-card/>
-      </el-col>
-    </el-row>-->
-
   </div>
 </template>
 
 <script>
 import PanelGroup from './components/PanelGroup'
-import LineChart from './components/LineChart'
+import LineChart from '@/components/Charts/LineChart'
 
 const lineChartData = {
-  // 折线图的数据
+  // 图表的数据，后端数据结构
   data: {
-    orderData: [100, 120, 161, 134, 105, 160, 165],
-    turnoverData: [120, 82, 91, 154, 162, 140, 145]
+    legendData: ['营业额（元）', '订单数（笔）'],
+    categoryData: ['2023-01-24', '2023-01-25', '2023-01-26', '2023-01-27', '2023-01-28', '2023-01-29', '2023-01-30'],
+    revenueData: [12000.00, 8200.00, 9100.00, 15400.00, 16200.50, 14000.00, 9721.00],
+    orderData: [100, 120, 161, 134, 105, 160, 165]
   }
 }
 
