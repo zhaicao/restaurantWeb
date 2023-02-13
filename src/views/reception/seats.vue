@@ -15,9 +15,9 @@
         <el-col :span="6" v-for="(seat, index) in seatList" :key="index">
           <div class="seat-content" :class="seat.tableUse===1 ? 'bg-used' : 'bg-free'" @click="enterMenu(seat.tableId)">
               <h2>{{ seat.tableName }}</h2>
+              <span>{{ seat.tableDescription }}</span>
               <div v-if="seat.tableUse === 1">
-                <span>{{ seat.tableDescription }}</span>
-                <span>下单时间:2023-01-28 18:52:02</span>
+                <span>下单时间: 2023-01-28 18:52:02</span>
               </div>
               <div v-else="">
                 <span>空闲</span>
@@ -53,22 +53,18 @@
       ])
     },
     created() {
-      console.info(this.userId)
       this.getSeatList()
     },
     methods: {
       getSeatList() {
         getTableList(this.seatQuery).then(res => {
           this.seatList = res.data.data.records
-          console.info(this.seatList)
         })
       },
-      enterMenu(seatId) {
-        console.info('进入菜单' + seatId)
-        this.$router.push('/menu/' + seatId)
+      enterMenu(tableId) {
+        this.$router.push('/menu/' + tableId)
       },
       logout() {
-        console.info('logout')
         this.$store.dispatch('LogOut').then(() => {
           location.reload()// In order to re-instantiate the vue-router object to avoid bugs
         })

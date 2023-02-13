@@ -249,7 +249,7 @@ export const asyncRouterMap = [
     }
   },
   {
-    path: '/menu/:seatId',
+    path: '/menu/:tableId',
     component: () => import('@/views/reception/menu'),
     hidden: false,
     meta: {

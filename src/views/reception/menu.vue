@@ -21,19 +21,18 @@
         </div>
       </div>
       <el-drawer
-        title="您已下单如下菜品"
+        :title="drawerTitle"
         :visible.sync="drawerShow"
         :before-close="handleClose"
         size="25%"
         direction="ltr">
 
         <div class="xin-main">
-          <!--判断是否有消息进行显示-->
-<!--          <div class="xin-message" v-if="noticeList.length === 0">
-            <p>暂无消息</p>
-          </div>-->
           <div class="xin-content" style="height: 90%;">
-            <el-table :data="orderFoodList">
+            <el-table :data="orderFoodList"
+                      show-summary
+                      :summary-method="getSummaries"
+            >
               <el-table-column label="#" align="center" width="30">
                 <template slot-scope="scope">
                   <span>{{ scope.$index+1 }}</span>
@@ -44,13 +43,17 @@
                   <img class="cart_img" :src="baseUrl + '/' + scope.row.menuImgBasicPath + '/' + scope.row.menuImg">
                 </template>
               </el-table-column>
-              <el-table-column property="menuName" label="菜品" width="100" align="center"></el-table-column>
-              <el-table-column label="数量">
+              <el-table-column label="菜品" width="100" align="center">
+                <template slot-scope="scope">
+                  <span>{{ scope.row.menuName }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="数量" prop="quantity" width="50" align="center">
                 <template slot-scope="scope">
                   <span>x{{ scope.row.quantity }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="价格" align="center">
+              <el-table-column label="价格（元）" prop="menuPrice" align="center" width="120">
                 <template slot-scope="scope">
                   <span>{{ (scope.row.menuPrice * scope.row.quantity).toFixed(2) }}</span>
                 </template>
@@ -60,7 +63,9 @@
           <div class="xin-footer" style="height:10%; align-items:center; justify-content:center; display: flex;">
             <el-button type="warning" style="margin-right: 20px" @click="$router.back()">返回桌位列表</el-button>
 
-            <el-dropdown @command="handleCommand">
+            <el-dropdown
+              @command="handleCommand"
+              :disabled="!moreOpsBtnVisible">
               <el-button type="primary">
                 更多操作<i class="el-icon-arrow-down el-icon--right"></i>
               </el-button>
@@ -115,8 +120,6 @@
           </div>
         </div>
       </div>
-      <el-button @click="clearCart()">清空购物车</el-button>
-      <el-button type="text" @click="table = true">打开嵌套表格的 Drawer</el-button>
     </div>
 
     <!--购物车-->
@@ -126,7 +129,6 @@
               'cart-open': cart.isOpen
          }">
       <div class="cd-cart-trigger" @click="cartTrigger()">
-        Cart
         <ul class="count">  <!--cart items count-->
           <li>{{ cartFoodList.length }}</li>
           <li>0</li>
@@ -172,7 +174,7 @@
       </div>  <!--.cd-cart-->
     </div>  <!--cd-cart-container -->
 
-    <!-- dialog -->
+    <!-- 备注dialog -->
     <el-dialog title="订单备注" :visible.sync="dialogFormVisible">
       <el-form :model="form">
         <el-form-item label="备注内容">
@@ -222,8 +224,10 @@
         menuFoodList: [],
         cartFoodList: [],
         orderFoodList: [],
-        table: false,
-
+        tableId: this.$route.params.tableId, //桌位号
+        orderId: undefined,
+        moreOpsBtnVisible: false, //“更多操作”按钮是否可用
+        drawerTitle: '',
         cart: {
           isOpen: false,
           isEmpty: true,
@@ -233,7 +237,7 @@
         title: "",
         drawerSize: "",
         slotName: "",
-        isShow: false,
+        isShow: false, //侧边栏
         barRight: "",
         btnName: '',
         form: {
@@ -258,8 +262,8 @@
       this.getMenuFoodList()
     },
     watch: {
-      deep: true,
       cartFoodList: {
+        immediate: true,
         // 判断购物车是否为空，改变其样式
         handler(val) {
           if (val.length !== 0)
@@ -270,9 +274,23 @@
             }
         }
       },
+      orderFoodList: {
+        immediate: true,
+        // 若已下单，则显示“更多操作”按钮
+        handler(val) {
+          if (val.length !== 0) {
+            this.moreOpsBtnVisible = true
+            this.drawerTitle = '您的订单(e02aa47b966911ed856902004c4f4f51)明细'
+          }
+
+          else {
+            this.moreOpsBtnVisible = false
+            this.drawerTitle = '请选择菜品下单'
+          }
+        }
+      },
       isShow: {
         handler(val) {
-          console.info('isShow Change' + val)
           this.drawerShow = val
         }
       }
@@ -285,7 +303,6 @@
         this.btnName = ''
       },
       handleClose(done) {
-        console.info('Drawer closed')
         this.isShow = false
         done()
       },
@@ -330,7 +347,7 @@
       clearCart() {
         this.cartFoodList = []
       },
-      // 选中Table
+      // 选中Tab
       selectTab(category) {
         this.isSelectedTab = category
       },
@@ -338,12 +355,12 @@
         this.$message.success('下单成功')
         console.info('Cart checkout')
         this.orderFoodList = this.orderFoodList.concat(this.cartFoodList)
+        console.info(this.orderFoodList)
         this.cartFoodList = []
         this.cart.isEmpty = true
       },
       // 下拉菜单操作
       handleCommand(command) {
-        console.info(command)
         if (command === 'msg')
           this.dialogFormVisible = true
         else if (command === 'urge')
@@ -361,13 +378,53 @@
         this.dialogFormVisible = false
       },
       sendUrgeMsg(orderId) {
-        console.info('催单')
+        this.$message.success('催单成功')
       },
       orderCheckOut(orderId) {
-        console.info('结账')
+        this.$message.success('结账成功')
       },
       cancelOrder(orderId) {
-        console.info('撤销订单')
+        this.$message.success('该订单已成功撤销')
+      },
+      // 订单明细合计
+      getSummaries(param) {
+        // 参数异常返回[]
+        if (param.columns.length === 0 || param.data === null) return []
+        const { columns, data } = param;
+        const sums = []
+        // 指定参与计算的列。prop需与列的属性名一致
+        const defineColumns = [
+          'quantity', 'menuPrice'
+        ]
+        columns.forEach((column, index) => {
+          // 非指定列返回空字符
+          if (defineColumns.indexOf(column.property) < 0) {
+            sums[index] = ''
+            return
+          }
+          const values = data.map(item => {
+            if (column.property == defineColumns[1])
+              return Number(item[column.property] * item[defineColumns[0]]) // 计算总价
+            else
+              return Number(item[column.property])
+          })
+          // 计算累计总和
+          sums[index] = values.reduce((prev, curr) => {
+            const value = Number(curr);
+            if (!isNaN(value)) {
+              return Number(prev) + Number(curr);
+            } else {
+              return Number(prev);
+            }
+          }, 0);
+          if (column.property == defineColumns[1])
+            sums[index] = sums[index].toFixed(2);
+          else if(column.property == defineColumns[0])
+            sums[index] = 'x' + sums[index];
+          else
+            sums[index] = sums[index];
+        })
+        return sums
       }
     }
   }
