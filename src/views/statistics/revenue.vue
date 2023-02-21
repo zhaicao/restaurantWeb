@@ -21,12 +21,11 @@
         :picker-options="datePickerOptions">
       </el-date-picker>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查询</el-button>
-      <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="updateChartData">Test Update</el-button>
     </div>
 
     <!--Line Chat-->
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart :chartData="lineChartData"/>
+      <line-chart :chartData="lineChartData" v-if="chartDataReady"/>
     </el-row>
 
     <!--Table-->
@@ -94,9 +93,9 @@
           <span>{{ scope.row.orderList.length }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="总价（元）" prop="orderTotalAmount" align="center" min-width="300px">
+      <el-table-column label="总价（元）" prop="orderTotalPrice" align="center" min-width="300px">
         <template slot-scope="scope">
-          <span>{{ scope.row.orderTotalAmount.toFixed(2) }}</span>
+          <span>{{ scope.row.orderTotalPrice.toFixed(2) }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -112,6 +111,7 @@
   import waves from '@/directive/waves' // Waves directive
   import Pagination from '@/components/Pagination'
   import LineChart from '@/components/Charts/LineChart'
+  import { getRevenueOrderList, getRevenueChart } from '@/api/statistics'
 
   export default {
     name: 'Revenue',
@@ -132,7 +132,6 @@
         listQuery: {
           currentPage: 1,
           pageSize: 10,
-          orderStatus: undefined,
           startDate: undefined,
           endDate: undefined
         },
@@ -147,7 +146,8 @@
           }
         },
         lineChartData: undefined,
-        expands: []
+        expands: [],
+        chartDataReady: false
       }
     },
     created() {
@@ -158,50 +158,20 @@
       // 获取数据
       getList() {
         this.listLoading = true
-        // 列表数据结构，后端返回
-        this.list = [
-          {
-            orderDate: '2023-01-30',
-            orderTotalAmount: 10000.00,
-            orderList: [
-            {orderId: 'e02aa47b966911ed856902004c4f4f51', orderPrice: 91.21, orderDate: '2023-01-30 16:28:09'},
-            {orderId: '29', orderPrice: 58.0, orderDate: '2023-01-30 11:27:11'}
-            ]
-          },
-          {
-            orderDate: '2023-01-29',
-            orderTotalAmount: 8200.00,
-            orderList: [
-              {orderId: '22', orderPrice: 254.00, orderDate: '2023-01-29 17:28:09'},
-              {orderId: '21', orderPrice: 158.00, orderDate: '2023-01-29 15:27:11'},
-              {orderId: '20', orderPrice: 1458.00, orderDate: '2023-01-29 11:21:11'}
-            ]
-          },
-        ]
-        this.total = 2
-        setTimeout(() => {
-          this.listLoading = false
-        }, 1 * 1000)
+        getRevenueOrderList(this.listQuery).then(res => {
+          this.list = res.data.data.records
+          this.total = res.data.data.total
+          setTimeout(() => {
+            this.listLoading = false
+          }, 1 * 1000)
+        })
       },
+      // 获取图表数据
       getChartData() {
-        this.lineChartData =
-          // 图表的数据，后端数据结构
-          {
-            legendData: ['营业额（元）', '订单数（笔）'],
-            categoryData: ['2023-01-24', '2023-01-25', '2023-01-26', '2023-01-27', '2023-01-28', '2023-01-29', '2023-01-30'],
-            revenueData: [12000.00, 8200.00, 9100.00, 15400.00, 16200.50, 14000.00, 9721.00],
-            orderData: [100, 120, 161, 134, 105, 160, 165]
-        }
-      },
-      updateChartData() {
-        this.lineChartData =
-          // 图表的数据，后端数据结构
-          {
-            legendData: ['营业额（元）', '订单数（笔）'],
-            categoryData: ['2023-01-22', '2023-01-23', '2023-01-24', '2023-01-25', '2023-01-26', '2023-01-27', '2023-01-28', '2023-01-29', '2023-01-30'],
-            revenueData: [10000.00, 11000.00, 12000.00, 8200.00, 9100.00, 15400.00, 16200.50, 14000.00, 9721.00],
-            orderData: [70, 80, 100, 120, 161, 134, 105, 160, 165]
-          }
+        getRevenueChart(this.listQuery).then(res => {
+          this.lineChartData = res.data.data
+          this.chartDataReady = true
+        })
       },
       // 过滤
       handleFilter() {
@@ -222,7 +192,7 @@
         const sums = []
         // 指定参与计算的列。prop需与列的属性名一致
         const defineColumns = [
-          'orderList', 'orderTotalAmount'
+          'orderList', 'orderTotalPrice'
         ]
         columns.forEach((column, index) => {
           if (index === 0) {

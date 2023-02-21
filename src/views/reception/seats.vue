@@ -17,7 +17,7 @@
               <h2>{{ seat.tableName }}</h2>
               <span>{{ seat.tableDescription }}</span>
               <div v-if="seat.tableUse === 1">
-                <span>下单时间: 2023-01-28 18:52:02</span>
+                <span>下单时间: {{ seat.orderDate }}</span>
               </div>
               <div v-else="">
                 <span>空闲</span>
@@ -31,20 +31,13 @@
 
 <script>
   import { mapGetters } from "vuex";
-  import { getTableList } from '@/api/seat'
+  import { getTableListAll } from '@/api/seat'
 
   export default {
     name: "Seats",
     data() {
       return {
-        seatList: null,
-        seatQuery: {
-          currentPage: 1,
-          pageSize: 10,
-          tableId: undefined,
-          tableName: undefined,
-          tableUse: undefined
-        }
+        seatList: null
       }
     },
     computed: {
@@ -54,11 +47,12 @@
     },
     created() {
       this.getSeatList()
+      console.info(this.userId)
     },
     methods: {
       getSeatList() {
-        getTableList(this.seatQuery).then(res => {
-          this.seatList = res.data.data.records
+        getTableListAll().then(res => {
+          this.seatList = res.data.data
         })
       },
       enterMenu(tableId) {

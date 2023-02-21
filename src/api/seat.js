@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 /*
-获取桌位列表
+后台获取桌位列表
 * */
 export function getTableList(queryParams) {
   let tableUse = -1
@@ -18,6 +18,16 @@ export function getTableList(queryParams) {
       'tableName': queryParams.tableName,
       'tableUse': tableUse
     }
+  })
+}
+
+/*
+前台获取桌位列表
+* */
+export function getTableListAll() {
+  return request({
+    url: '/table/getTableListAll',
+    method: 'get'
   })
 }
 /*

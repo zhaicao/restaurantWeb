@@ -11,3 +11,29 @@ export function getOrderList(queryParams) {
   })
 }
 
+export function getOrderFoodListByTableId(tableId) {
+  return request({
+    url: '/order/getOrderByTableId',
+    method: 'get',
+    params: {
+      tableId: tableId
+    }
+  })
+}
+
+/**
+ *
+ * @param order
+ * @returns {*}
+ */
+export function addOrderFood(tableId, foodList) {
+  return request({
+    url: '/order/addOrder',
+    method: 'post',
+    data: {
+      tableNo: tableId,
+      foodList: foodList,
+    }
+  })
+}
+

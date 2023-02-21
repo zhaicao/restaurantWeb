@@ -40,22 +40,22 @@
               </el-table-column>
               <el-table-column label="图片" width="100" align="center">
                 <template slot-scope="scope">
-                  <img class="cart_img" :src="baseUrl + '/' + scope.row.menuImgBasicPath + '/' + scope.row.menuImg">
+                  <img class="cart_img" :src="baseUrl + '/' + scope.row.menu.menuImgBasicPath + '/' + scope.row.menu.menuImg">
                 </template>
               </el-table-column>
               <el-table-column label="菜品" width="100" align="center">
                 <template slot-scope="scope">
-                  <span>{{ scope.row.menuName }}</span>
+                  <span>{{ scope.row.menu.menuName }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="数量" prop="quantity" width="50" align="center">
+              <el-table-column label="数量" prop="odAmount" width="50" align="center">
                 <template slot-scope="scope">
-                  <span>x{{ scope.row.quantity }}</span>
+                  <span>x{{ scope.row.odAmount }}</span>
                 </template>
               </el-table-column>
               <el-table-column label="价格（元）" prop="menuPrice" align="center" width="120">
                 <template slot-scope="scope">
-                  <span>{{ (scope.row.menuPrice * scope.row.quantity).toFixed(2) }}</span>
+                  <span>{{ (scope.row.menu.menuPrice * scope.row.odAmount).toFixed(2) }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -145,20 +145,20 @@
             <ul>
               <li class="product" v-for="food in this.cartFoodList">
                 <div class="product-image">
-                  <img class="cart_img" :src="baseUrl + '/' + food.menuImgBasicPath + '/' + food.menuImg">
+                  <img class="cart_img" :src="baseUrl + '/' + food.menu.menuImgBasicPath + '/' + food.menu.menuImg">
                 </div>
                 <div class="product-details">
                   <h3>
-                    <div class="cart_a">{{ food.menuName }}</div>
+                    <div class="cart_a">{{ food.menu.menuName }}</div>
                   </h3>
-                  <span class="price">¥{{ (food.menuPrice * food.quantity).toFixed(2) }}</span>
+                  <span class="price">¥{{ (food.menu.menuPrice * food.odAmount).toFixed(2) }}</span>
                   <div class="actions">
                     <div class="delete-item" @click="deleteCartItem(food)">
                       删除
                     </div>
                     <div class="quantity">
                       <label>数量</label>
-                      <el-input-number v-model="food.quantity" size="small" :min="1" :max="10" style="width: 100px"></el-input-number>
+                      <el-input-number v-model="food.odAmount" size="small" :min="1" :max="10" style="width: 100px"></el-input-number>
                     </div>
                   </div>
                 </div>
@@ -199,7 +199,8 @@
 
 <script>
   import { getMenuList } from '@/api/menu'
-  import {mapGetters} from "vuex";
+  import { getOrderFoodListByTableId, addOrderFood } from '@/api/order'
+  import { mapGetters } from "vuex";
 
   const menuCategoryMapping = {
     staple: '主食',
@@ -246,20 +247,17 @@
       }
     },
     computed: {
-      ...mapGetters([
-        'name',
-        'roles'
-      ]),
       totalMoney: function() {
         let sum = 0
         for (const foodItem of this.cartFoodList) {
-          sum += Number(Number(foodItem.menuPrice) * Number(foodItem.quantity))
+          sum += Number(Number(foodItem.menu.menuPrice) * Number(foodItem.odAmount))
         }
         return sum.toFixed(2)
       }
     },
     created() {
       this.getMenuFoodList()
+      this.getOrderFoodList()
     },
     watch: {
       cartFoodList: {
@@ -280,7 +278,7 @@
         handler(val) {
           if (val.length !== 0) {
             this.moreOpsBtnVisible = true
-            this.drawerTitle = '您的订单(e02aa47b966911ed856902004c4f4f51)明细'
+            this.drawerTitle = '您的订单(' + this.orderId + ')明细'
           }
 
           else {
@@ -321,16 +319,24 @@
           this.menuFoodList = Object.fromEntries(m.entries())
         })
       },
+      getOrderFoodList() {
+        getOrderFoodListByTableId(this.tableId).then( res => {
+          if (res.data.code === 200) {
+            this.orderId = res.data.data.orderId
+            this.orderFoodList = res.data.data.orderdetail
+          }
+        })
+      },
       // 加入购物车
       addToCart(food) {
         // 判断List中是否存在，存在则数量+1，否则添加
         const index = this.cartFoodList.findIndex((v) => {
-          return v.foodId === food.foodId
+          return v.menu.foodId === food.foodId
         })
         if (index !== -1)
-          this.cartFoodList[index].quantity += 1
+          this.cartFoodList[index].odAmount += 1
         else
-          this.cartFoodList.push({...food, quantity: 1})
+          this.cartFoodList.push({menu: food, odAmount: 1})
       },
       // 打开/关闭购物车
       cartTrigger() {
@@ -351,13 +357,48 @@
       selectTab(category) {
         this.isSelectedTab = category
       },
+      // 购物车下单
       cartCheckOut() {
-        this.$message.success('下单成功')
-        console.info('Cart checkout')
-        this.orderFoodList = this.orderFoodList.concat(this.cartFoodList)
-        console.info(this.orderFoodList)
-        this.cartFoodList = []
-        this.cart.isEmpty = true
+        addOrderFood(this.tableId, this.cartFoodList).then( res => {
+          if (res.data.code === 200) {
+            this.$message.success('下单成功')
+            this.orderId = res.data.data.orderId
+            // 购物车中菜品与订单中菜品的交集
+            let foodInter = this.cartFoodList.filter(
+              cartVal => this.orderFoodList.some(
+                orderVal => orderVal.menu.foodId === cartVal.menu.foodId
+              )
+            )
+            // 新下单菜品中存在之前已下单菜品，则增加数量
+            foodInter.forEach( food => {
+              // 页面更新
+              for (const v of this.orderFoodList) {
+                if (v.menu.foodId === food.menu.foodId) {
+                  const index = this.orderFoodList.indexOf(v)
+                  v.odAmount += food.odAmount  // 累加下单菜品数量
+                  this.orderFoodList.splice(index, 1, v)
+                  break
+                }
+              }
+            })
+            // 将新下的菜加入到订单中，不含之前已下单的菜品
+            this.orderFoodList = this.orderFoodList.concat(
+              // 购物车中菜品与订单中的差集
+              this.cartFoodList.filter(
+                cartVal => this.orderFoodList.every(
+                  orderVal => orderVal.menu.foodId !== cartVal.menu.foodId
+                )
+              )
+            )
+            // 清空购物车
+            this.cartFoodList = []
+            this.cart.isEmpty = true
+          } else
+            this.$message.error('下单失败，请联系管理员')
+        })
+
+
+
       },
       // 下拉菜单操作
       handleCommand(command) {
@@ -392,9 +433,10 @@
         if (param.columns.length === 0 || param.data === null) return []
         const { columns, data } = param;
         const sums = []
-        // 指定参与计算的列。prop需与列的属性名一致
+        // 指定参与计算的列。
+        // 由于是通过prop判断，故此处需与列的属性名一致
         const defineColumns = [
-          'quantity', 'menuPrice'
+          'odAmount', 'menuPrice'
         ]
         columns.forEach((column, index) => {
           // 非指定列返回空字符
@@ -403,8 +445,9 @@
             return
           }
           const values = data.map(item => {
-            if (column.property == defineColumns[1])
-              return Number(item[column.property] * item[defineColumns[0]]) // 计算总价
+            if (column.property == defineColumns[1]) {
+              return Number(item.menu[column.property] * item[defineColumns[0]]) // 计算总价，由于item嵌套一次，需要指定menu
+            }
             else
               return Number(item[column.property])
           })

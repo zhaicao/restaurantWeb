@@ -82,10 +82,10 @@ export default {
         this.__resizeHandler()
       }
     },
-    setOptions({ legendData, categoryData, orderData, revenueData } = {}) {
+    setOptions({ legend, category, orderQuantity, revenue } = {}) {
       this.chart.setOption({
         xAxis: {
-          data: categoryData,
+          data: category,
           boundaryGap: true,
           axisTick: {
             show: false
@@ -124,7 +124,7 @@ export default {
         },
         yAxis: [
           {
-            name: legendData[0],
+            name: legend[0],
             type: 'value',
             axisLabel: {
               textStyle: {fontsize: 20},
@@ -141,7 +141,7 @@ export default {
             },
           },
           {
-            name: legendData[1],
+            name: legend[1],
             type: 'value',
             position: 'right',
             axisLabel: {
@@ -159,10 +159,10 @@ export default {
           }
         ],
         legend: {
-          data: legendData
+          data: legend
         },
         series: [{
-          name: legendData[0],
+          name: legend[0],
           smooth: true,
           type: 'line',
           itemStyle: {
@@ -174,11 +174,11 @@ export default {
               }
             }
           },
-          data: revenueData,
+          data: revenue,
           animationDuration: 2000,
           animationEasing: 'quadraticOut',
         },{
-            name: legendData[1],
+            name: legend[1],
             itemStyle: {
               normal: {
                 color: chartColors[0],
@@ -190,12 +190,12 @@ export default {
             },
             smooth: true,
             type: 'bar',
-            data: orderData,
+            data: orderQuantity,
             animationDuration: 2000,
             animationEasing: 'cubicInOut',
             yAxisIndex: 1
           }]
-      })
+      }, true)
     },
     initChart() {
       // this.$el 指向当前组件template模板中的根标签
