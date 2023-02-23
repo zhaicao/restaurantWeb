@@ -3,10 +3,10 @@
     <div class="filter-container">
       <h2 style="text-align: center; color: #eeeeee">餐厅桌位（包间）列表</h2>
       <el-row style="float: right;">
-        <el-button type="primary">上班打卡</el-button>
-        <el-button type="primary">下班打卡</el-button>
-        <el-button type="primary">请假</el-button>
-        <el-button type="primary" style="margin-right: 10px;" @click="logout">退出</el-button>
+        <el-button type="primary" icon="el-icon-edit" @click="handleAttendence('punchIn')">签到</el-button>
+        <el-button type="primary" icon="el-icon-edit" @click="handleAttendence('punchOut')">签退</el-button>
+        <el-button type="warning" icon="el-icon-star-off" @click="handleLeave()">请假</el-button>
+        <el-button type="info" style="margin-right: 10px;" @click="logout">退出</el-button>
       </el-row>
     </div>
 
@@ -26,28 +26,43 @@
         </el-col>
       </el-row>
     </div>
+
+    <!--Dialog-->
+    <!--增加:append-to-body="true"，使用dialog显示在阴影上-->
+    <el-dialog
+      :title="dialogStatus"
+      :visible.sync="dialogFormVisible"
+      :append-to-body="true"
+      @closed="cancelCloseDialog()"
+      width="35%">
+      <div>
+        <TakePhotos ref="takePhotos"/>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelCloseDialog()">取消</el-button>
+        <el-button type="primary" @click="dialogStatus==='签到'?punchInData():punchOutData()">{{dialogStatus}}</el-button>
+      </div>
+    </el-dialog>
+    <!--\Dialog-->
   </div>
 </template>
 
 <script>
-  import { mapGetters } from "vuex";
   import { getTableListAll } from '@/api/seat'
+  import TakePhotos from '@/views/userInfo/component/takePhoto'
+  import AttendanceHandler from '@/views/userInfo/mixin/AttendanceHandler'
 
   export default {
     name: "Seats",
+    components: { TakePhotos },
+    mixins:[ AttendanceHandler ],
     data() {
       return {
         seatList: null
       }
     },
-    computed: {
-      ...mapGetters([
-        'userId'
-      ])
-    },
     created() {
       this.getSeatList()
-      console.info(this.userId)
     },
     methods: {
       getSeatList() {
@@ -62,7 +77,7 @@
         this.$store.dispatch('LogOut').then(() => {
           location.reload()// In order to re-instantiate the vue-router object to avoid bugs
         })
-      }
+      },
     }
   }
 </script>

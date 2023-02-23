@@ -81,7 +81,11 @@
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="getList" />
 
     <!--Dialog-->
-    <el-dialog :title="dialogStatus" :visible.sync="dialogFormVisible" width="35%">
+    <el-dialog
+      :title="dialogStatus"
+      :visible.sync="dialogFormVisible"
+      @closed="cancelCloseDialog()"
+      width="35%">
       <div>
         <TakePhotos ref="takePhotos"/>
       </div>
@@ -96,8 +100,8 @@
 </template>
 
 <script>
-  import { fetchList } from '@/api/article'
-  import { getAttendanceList, addAttendance, updateFinish, addLeave, deleteAttendance } from '@/api/attendance'
+  import AttendanceHandler from './mixin/AttendanceHandler'
+  import { getAttendanceList, deleteAttendance } from '@/api/attendance'
   import waves from '@/directive/waves' // Waves directive
   import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
   import TakePhotos from '@/views/userInfo/component/takePhoto'
@@ -122,6 +126,7 @@
     name: 'Attendance',
     components: { Pagination, TakePhotos },
     directives: { waves },
+    mixins:[ AttendanceHandler ],
     filters: {
       // 类型显示名字
       typeFilter(attType) {
@@ -147,47 +152,23 @@
           userId: undefined,
           attendanceType: undefined
         },
-        attendanceType,
-        // Dialog中数据
-        attendanceForm: {
-          userId: undefined,
-          attendanceType: undefined,
-        },
-        // 默认Dialog表单不可见
-        dialogFormVisible: false,
-        dialogStatus: '',
-        // Dialog的Title
-        textMap: {
-          punchIn: '签到',
-          punchOut: '签退'
-        }
+        attendanceType
       }
     },
     computed: {
       ...mapGetters([
-        'userId',
         'roles'
       ])
     },
     created() {
       // 计算属性无法直接在data中赋值
       this.listQuery.userId = this.roles[0] === 'admin' ? undefined : this.userId
-      this.attendanceForm.userId = this.userId
       this.getList()
     },
     methods: {
-      // Dialog取消
-      cancelCloseDialog(){
-        this.dialogFormVisible = false;
-        // 等Dom更新完后执行回调函数
-        this.$nextTick(() => {
-          this.$refs.takePhotos.cancelCloseVideo()
-        })
-      },
       // 获取数据
       getList() {
         this.listLoading = true
-        console.info(this.listQuery)
         getAttendanceList(this.listQuery).then(res => {
           this.list = res.data.data.records
           this.total = res.data.data.total
@@ -201,61 +182,6 @@
       handleFilter() {
         this.listQuery.currentPage = 1
         this.getList()
-      },
-      // 签到/签退按钮
-      handleAttendence(type) {
-        this.dialogStatus = this.textMap[type]
-        // 渲染完毕后开启摄像头
-        this.$nextTick(() => {
-          this.$refs.takePhotos.getVideo()
-        })
-        this.dialogFormVisible = true
-      },
-      // Dialog-签到事件
-      punchInData() {
-        console.info(this.attendanceForm)
-        addAttendance(this.attendanceForm).then(res => {
-          if (res.data.code === 200) {
-            this.$notify({
-              title: '签到',
-              message: '签到成功',
-              type: 'success',
-              duration: 2000
-            })
-            this.cancelCloseDialog()
-          }
-          else
-            this.$message.error(res.data.message)
-        })
-      },
-      // 签退事件
-      punchOutData() {
-        updateFinish(this.attendanceForm).then(res => {
-          if (res.data.code === 200) {
-            this.$notify({
-              title: '签退',
-              message: '签退成功',
-              type: 'success',
-              duration: 2000
-            })
-            this.cancelCloseDialog()
-          } else
-            this.$message.error(res.data.message)
-        })
-      },
-      handleLeave() {
-        this.$confirm('确定请假?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          addLeave(this.attendanceForm).then(res => {
-            if (res.data.code === 200) {
-              this.$message.success('请假成功')
-            } else
-              this.$message.error(res.data.message)
-          })
-        }).catch(() => {})
       },
       // 删除按钮事件
       handleDelete(row) {
