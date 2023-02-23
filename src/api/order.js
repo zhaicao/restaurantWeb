@@ -37,3 +37,28 @@ export function addOrderFood(tableId, foodList) {
   })
 }
 
+/**
+ * 订单结账
+ * @param orderId
+ * @returns {*}
+ */
+export function checkOut(orderId) {
+  return request({
+    url: '/order/updateOrderstakong',
+    method: 'put',
+    params: { orderId: orderId }
+  })
+}
+
+/**
+ * 撤销订单
+ * @param orderId
+ */
+export function cancelOrder(orderId) {
+  return request({
+    url: '/order/deleteOrderbyorderid',
+    method: 'delete',
+    params: { orderId: orderId }
+  })
+}
+

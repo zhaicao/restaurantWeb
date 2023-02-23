@@ -58,3 +58,16 @@ export function completeUrgeMsg(msgIds) {
   })
 }
 
+/**
+ * 增加消息（催单或备注）
+ * @param msgForm
+ * @returns {*}
+ */
+export function addMsg(msgForm) {
+  return request({
+    url: '/message/addMessage',
+    method: 'post',
+    data: msgForm
+  })
+}
+
