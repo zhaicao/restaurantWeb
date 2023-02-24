@@ -6,8 +6,8 @@
           <svg-icon icon-class="peoples" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
-          <div class="card-panel-text">用餐顾客</div>
-          <count-to :start-val="0" :end-val="consumerVal" :duration="2600" class="card-panel-num"/>
+          <div class="card-panel-text">实时用餐顾客</div>
+          <count-to :start-val="0" :end-val="chartData.consumers" :duration="2000" class="card-panel-num"/>
         </div>
       </div>
     </el-col>
@@ -17,8 +17,8 @@
           <svg-icon icon-class="shopping" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
-          <div class="card-panel-text">订单数</div>
-          <count-to :start-val="0" :end-val="ordersVal" :duration="3600" class="card-panel-num"/>
+          <div class="card-panel-text">今日订单总数</div>
+          <count-to :start-val="0" :end-val="chartData.orders" :duration="2000" class="card-panel-num"/>
         </div>
       </div>
     </el-col>
@@ -28,8 +28,8 @@
           <svg-icon icon-class="message" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
-          <div class="card-panel-text">未读消息</div>
-          <count-to :start-val="0" :end-val="unreadMsgVal" :duration="3000" class="card-panel-num"/>
+          <div class="card-panel-text">今日催单总数</div>
+          <count-to :start-val="0" :end-val="chartData.urgencies" :duration="2000" class="card-panel-num"/>
         </div>
       </div>
     </el-col>
@@ -39,8 +39,8 @@
           <svg-icon icon-class="money" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
-          <div class="card-panel-text">今日营收(元)</div>
-          <count-to :start-val="0" :end-val="turnoverVal" :duration="3200" class="card-panel-num"/>
+          <div class="card-panel-text">今日订单总额(元)</div>
+          <count-to :start-val="0" :end-val="chartData.turnover" :duration="2600" class="card-panel-num"/>
         </div>
       </div>
     </el-col>
@@ -55,12 +55,10 @@ export default {
   components: {
     CountTo
   },
-  data() {
-    return {
-      consumerVal: 371,
-      ordersVal: 13600,
-      unreadMsgVal: 81212,
-      turnoverVal: 9280
+  props: {
+    chartData: {
+      type: Object,
+      required: true
     }
   },
   methods: {
@@ -140,6 +138,8 @@ export default {
         margin-bottom: 12px;
       }
       .card-panel-num {
+        text-align: right;
+        display: block;
         font-size: 20px;
       }
     }

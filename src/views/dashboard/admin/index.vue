@@ -1,10 +1,10 @@
 <template>
   <div class="dashboard-editor-container">
     <!--基础数据看板-->
-    <panel-group/>
+    <panel-group :chart-data="groupChartData"/>
     <!--折线图-->
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart :chart-data="lineChartData"/>
+      <line-chart :chart-data="lineChartData" v-if="chartDataReady"/>
     </el-row>
 
   </div>
@@ -13,16 +13,8 @@
 <script>
 import PanelGroup from './components/PanelGroup'
 import LineChart from '@/components/Charts/LineChart'
-
-const lineChartData = {
-  // 图表的数据，后端数据结构
-  data: {
-    legend: ['营业额（元）', '订单数（笔）'],
-    category: ['2023-01-24', '2023-01-25', '2023-01-26', '2023-01-27', '2023-01-28', '2023-01-29', '2023-01-30'],
-    revenue: [12000.00, 8200.00, 9100.00, 15400.00, 16200.50, 14000.00, 9721.00],
-    orderQuantity: [100, 120, 161, 134, 105, 160, 165]
-  }
-}
+import { getRevenueChart, getRevenuePanelGroup } from '@/api/statistics'
+import moment from 'moment'
 
 export default {
   name: 'DashboardAdmin',
@@ -32,16 +24,52 @@ export default {
   },
   data() {
     return {
-      lineChartData: lineChartData.data
+      lineChartData: undefined,
+      groupChartData: {
+        consumers: 5,
+        orders: 17,
+        urgencies: 4,
+        turnover: 300
+      },
+      chartDataReady: false,
+      dateQuery: {
+        // 默认展示近15天数据
+        startDate: this.getDateByDay(15),
+        endDate: this.getDateByDay(0)
+      },
+      panelGroupQuery: {
+        // 默认展示当天
+        startDate: this.getDateByDay(0),
+        endDate: this.getDateByDay(0)
+      }
     }
   },
-/*
-  // 点击PanelGroup触发
+  created() {
+    this.getChartData()
+    this.getPanelGroupData()
+  },
   methods: {
-    handleSetLineChartData(type) {
-      this.lineChartData = lineChartData[type]
+    // 获取图表数据
+    getChartData() {
+      getRevenueChart(this.dateQuery).then(res => {
+        this.lineChartData = res.data.data
+        this.chartDataReady = true
+      })
+    },
+    // 获取panelGroup数据
+    getPanelGroupData() {
+      getRevenuePanelGroup(this.panelGroupQuery).then(res => {
+        this.groupChartData = res.data.data
+      })
+    },
+    // 获取与当前时间相隔Day天数的日期
+    // Day为0，则获取当前日期
+    // Day为3，则获取3天前的日期
+    getDateByDay(Day) {
+      // 使用moment.js
+      return moment(new Date().getTime() - Day * 1000 * 24 * 60 * 60).format('YYYY-MM-DD')
     }
-  }*/
+  }
 }
 </script>
 

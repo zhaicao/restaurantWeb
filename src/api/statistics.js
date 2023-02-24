@@ -22,3 +22,14 @@ export function getRevenueChart(queryParams) {
   })
 }
 
+/*
+获取主页面板数据
+* */
+export function getRevenuePanelGroup(queryParams) {
+  return request({
+    url: '/statistics/getRevenuePanelGroup',
+    method: 'get',
+    params: queryParams
+  })
+}
+
