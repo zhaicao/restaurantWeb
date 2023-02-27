@@ -33,6 +33,7 @@ const devWebpackConfig = merge(baseWebpackConfig, {
     historyApiFallback: true,
     hot: true,
     compress: true,
+    useLocalIp: true,
     host: HOST || config.dev.host,
     port: PORT || config.dev.port,
     open: config.dev.autoOpenBrowser,
@@ -81,9 +82,9 @@ module.exports = new Promise((resolve, reject) => {
         new FriendlyErrorsPlugin({
           compilationSuccessInfo: {
             messages: [
-              `Your application is running here: http://${
-                devWebpackConfig.devServer.host
-              }:${port}`
+              `App runing at: `,
+              ` - Local: http://localhost:${port}`, //配置这里
+              ` - Network: http://${require('ip').address()}:${port}`,//配置这里
             ]
           },
           onErrors: config.dev.notifyOnErrors
