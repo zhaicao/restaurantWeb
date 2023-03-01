@@ -4,6 +4,7 @@
     <!--侧边栏-->
     <!--事件方法使用props方式传入-->
     <MenuSideBar
+      ref="sideBar"
       :order-food-list="orderFoodList"
       :base-url="baseUrl"
       :order-id="orderId"
@@ -80,7 +81,6 @@
     components: { MenuSideBar, Cart },
     data() {
       return {
-        dialogFormVisible: false,
         baseUrl: process.env.BASE_API, // 默认URl前缀
         listQuery: {
           currentPage: 1,
@@ -208,7 +208,8 @@
         addMsg(this.msgForm).then(res => {
           if (res.data.code === 200) {
             this.$message.success('订单备注成功')
-            this.dialogFormVisible = false
+            // 修改sideBar子组件数据值
+            this.$refs.sideBar.dialogFormVisible = false
             this.resetMsgForm()
           } else
             this.$message.error(res.data.message)
