@@ -13,10 +13,9 @@
       :urgency="sendUrgeMsg"
       :checkout="orderCheckOut"
       :cancel-order="cancelOrder"
-      :reset-msg-form="resetMsgForm">
-    </MenuSideBar>
+      :reset-msg-form="resetMsgForm"/>
 
-    <div class="header"></div>
+    <div class="header"/>
     <div class="content">
       <div class="container_12">
         <div class="grid_12">
@@ -26,22 +25,25 @@
           <div class="div-nav  ">
             <div class="grid_12">
               <ul class="nav">
-                <li v-for="(v, k) in this.menuCategoryMapping"
-                    :class="{selected: isSelectedTab === k}"
-                    @click="selectTab(k)">
+                <li
+                  v-for="(v, k) in this.menuCategoryMapping"
+                  :class="{selected: isSelectedTab === k}"
+                  @click="selectTab(k)">
                   {{ v }}
                 </li>
               </ul>
             </div>
           </div>
           <div class="div-tabs">
-            <div v-for="(menuList, k) in this.menuFoodList"
-                 class="tab-content gallery1"
-                 v-show="isSelectedTab === k">
-              <div v-for="food in menuList"
-                   class="grid_3"
-                   @click="addToCart(food)">
-                <img width="200px" height="200px" :src="baseUrl + '/' + food.menuImgBasicPath + '/' + food.menuImg">
+            <div
+              v-for="(menuList, k) in this.menuFoodList"
+              v-show="isSelectedTab === k"
+              class="tab-content gallery1">
+              <div
+                v-for="food in menuList"
+                class="grid_3"
+                @click="addToCart(food)">
+                <img :src="baseUrl + '/' + food.menuImgBasicPath + '/' + food.menuImg" width="200px" height="200px">
                 <div class="col2">
                   <span class="add-to-cart-info col3">{{ food.menuName }}</span>
                   <span>{{ food.menuPrice.toFixed(2) }} 元</span>
@@ -63,197 +65,194 @@
 </template>
 
 <script>
-  import { getMenuList } from '@/api/menu'
-  import { getOrderFoodListByTableId, addOrderFood,checkOut, cancelOrder } from '@/api/order'
-  import { addMsg } from '@/api/msg'
-  import { mapGetters } from "vuex";
-  import Cart from './components/cart'
-  import MenuSideBar from "./components/menuSideBar";
+import { numberDeleteByid } from '../../api/callnumber'
+import { getCallnumberListAll } from '../../api/callnumber'
+import { getMenuList } from '@/api/menu'
+import { getOrderFoodListByTableId, addOrderFood, checkOut, cancelOrder } from '@/api/order'
+import { addMsg } from '@/api/msg'
+import { mapGetters } from 'vuex'
+import Cart from './components/cart'
+import MenuSideBar from './components/menuSideBar'
 
-  const menuCategoryMapping = {
-    staple: '主食',
-    snack: '小吃',
-    drink: '饮料'
-  }
+const menuCategoryMapping = {
+  staple: '主食',
+  snack: '小吃',
+  drink: '饮料'
+}
 
-  export default {
-    name: "Menu",
-    components: { MenuSideBar, Cart },
-    data() {
-      return {
-        baseUrl: process.env.BASE_API, // 默认URl前缀
-        listQuery: {
-          currentPage: 1,
-          pageSize: 1000,
-          menuName: undefined,
-          menuType: undefined
-        },
-        menuCategoryMapping,
-        isSelectedTab: 'staple',
-        menuFoodList: [],
-        cartFoodList: [],
-        orderFoodList: [],
-        tableId: this.$route.params.tableId, //桌位号
-        orderId: undefined,
-        // 消息表单
-        msgForm: {
-          messageUserId: undefined,
-          messageOrderId: undefined,
-          messageType: undefined,
-          messageContent: undefined
-        }
+export default {
+  name: 'Menu',
+  components: { MenuSideBar, Cart },
+  data() {
+    return {
+      drawer: false,
+      baseUrl: process.env.BASE_API, // 默认URl前缀
+      listQuery: {
+        currentPage: 1,
+        pageSize: 1000,
+        menuName: undefined,
+        menuType: undefined
+      },
+      menuCategoryMapping,
+      isSelectedTab: 'staple',
+      menuFoodList: [],
+      cartFoodList: [],
+      orderFoodList: [],
+      tableId: this.$route.params.tableId, // 桌位号
+      orderId: undefined,
+      // 消息表单
+      msgForm: {
+        messageUserId: undefined,
+        messageOrderId: undefined,
+        messageType: undefined,
+        messageContent: undefined
       }
-    },
-    computed: {
-      ...mapGetters([
-        'userId'
-      ])
-    },
-    created() {
-      this.getMenuFoodList()
-      this.getOrderFoodList()
-    },
-    // 需要待数据完成后，更新userId和orderId
-    updated() {
-      this.msgForm.messageUserId = this.userId
-      this.msgForm.messageOrderId = this.orderId
-    },
-    methods: {
-      // 获取菜单列表
-      getMenuFoodList() {
-        getMenuList(this.listQuery).then(res => {
-          /* 处理menuList按menuType分类，格式为
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'userId'
+    ])
+  },
+  created() {
+    // this.numberDelete()
+    this.getMenuFoodList()
+    this.getOrderFoodList()
+  },
+  // 需要待数据完成后，更新userId和orderId
+  updated() {
+    this.msgForm.messageUserId = this.userId
+    this.msgForm.messageOrderId = this.orderId
+  },
+  methods: {
+
+    // 获取菜单列表
+    getMenuFoodList() {
+      getMenuList(this.listQuery).then(res => {
+        /* 处理menuList按menuType分类，格式为
           {
           staple: [{...},{...}],
           snack: [{...},{...}],
           drink: [{...}]
           }*/
-          const m = new Map()
-          res.data.data.records.map( item =>{
-            m.set(item.menuType, [...(m.get(item.menuType) || ''), item])
-          })
-          this.menuFoodList = Object.fromEntries(m.entries())
+        const m = new Map()
+        res.data.data.records.map(item => {
+          m.set(item.menuType, [...(m.get(item.menuType) || ''), item])
         })
-      },
-      // 选中菜单Tab 切换
-      selectTab(category) {
-        this.isSelectedTab = category
-      },
-      // 加入购物车
-      addToCart(food) {
-        // 判断List中是否存在，存在则数量+1，否则添加
-        const index = this.cartFoodList.findIndex((v) => {
-          return v.menu.foodId === food.foodId
-        })
-        if (index !== -1)
-          this.cartFoodList[index].odAmount += 1
-        else
-          this.cartFoodList.push({menu: food, odAmount: 1})
-      },
-      // 购物车下单
-      cartCheckOut() {
-        addOrderFood(this.tableId, this.cartFoodList).then( res => {
-          if (res.data.code === 200) {
-            this.$message.success('下单成功')
-            this.orderId = res.data.data.orderId
-            // 购物车中菜品与订单中菜品的交集
-            let foodInter = this.cartFoodList.filter(
-              cartVal => this.orderFoodList.some(
-                orderVal => orderVal.menu.foodId === cartVal.menu.foodId
-              )
+        this.menuFoodList = Object.fromEntries(m.entries())
+      })
+    },
+    // 选中菜单Tab 切换
+    selectTab(category) {
+      this.isSelectedTab = category
+    },
+    // 加入购物车
+    addToCart(food) {
+      // 判断List中是否存在，存在则数量+1，否则添加
+      const index = this.cartFoodList.findIndex((v) => {
+        return v.menu.foodId === food.foodId
+      })
+      if (index !== -1) { this.cartFoodList[index].odAmount += 1 } else { this.cartFoodList.push({ menu: food, odAmount: 1 }) }
+    },
+    // 购物车下单
+    cartCheckOut() {
+      addOrderFood(this.tableId, this.cartFoodList).then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('下单成功')
+          this.orderId = res.data.data.orderId
+          // 购物车中菜品与订单中菜品的交集
+          const foodInter = this.cartFoodList.filter(
+            cartVal => this.orderFoodList.some(
+              orderVal => orderVal.menu.foodId === cartVal.menu.foodId
             )
-            // 新下单菜品中存在之前已下单菜品，则增加数量
-            foodInter.forEach( food => {
-              // 页面更新
-              for (const v of this.orderFoodList) {
-                if (v.menu.foodId === food.menu.foodId) {
-                  const index = this.orderFoodList.indexOf(v)
-                  v.odAmount += food.odAmount  // 累加下单菜品数量
-                  this.orderFoodList.splice(index, 1, v)
-                  break
-                }
+          )
+          // 新下单菜品中存在之前已下单菜品，则增加数量
+          foodInter.forEach(food => {
+            // 页面更新
+            for (const v of this.orderFoodList) {
+              if (v.menu.foodId === food.menu.foodId) {
+                const index = this.orderFoodList.indexOf(v)
+                v.odAmount += food.odAmount // 累加下单菜品数量
+                this.orderFoodList.splice(index, 1, v)
+                break
               }
-            })
-            // 将新下的菜加入到订单中，不含之前已下单的菜品
-            this.orderFoodList = this.orderFoodList.concat(
-              // 购物车中菜品与订单中的差集
-              this.cartFoodList.filter(
-                cartVal => this.orderFoodList.every(
-                  orderVal => orderVal.menu.foodId !== cartVal.menu.foodId
-                )
+            }
+          })
+          // 将新下的菜加入到订单中，不含之前已下单的菜品
+          this.orderFoodList = this.orderFoodList.concat(
+            // 购物车中菜品与订单中的差集
+            this.cartFoodList.filter(
+              cartVal => this.orderFoodList.every(
+                orderVal => orderVal.menu.foodId !== cartVal.menu.foodId
               )
             )
-            // 清空购物车
-            this.cartFoodList = []
-          } else
-            this.$message.error('下单失败，请联系管理员')
-        })
-      },
-      // 左侧边栏获取已下单的菜品列表
-      getOrderFoodList() {
-        getOrderFoodListByTableId(this.tableId).then( res => {
-          if (res.data.code === 200) {
-            this.orderId = res.data.data.orderId
-            this.orderFoodList = res.data.data.orderdetail
-          }
-        })
-      },
-      // 侧边栏-发送订单备注消息
-      sendMsg() {
-        if (this.msgForm.messageContent == null || this.msgForm.messageContent == undefined || this.msgForm.messageContent.trim() == '') {
-          this.$message.warning('请输入备注内容')
-          return
+          )
+          // 清空购物车
+          this.cartFoodList = []
+        } else { this.$message.error('下单失败，请联系管理员') }
+      })
+    },
+    // 左侧边栏获取已下单的菜品列表
+    getOrderFoodList() {
+      getOrderFoodListByTableId(this.tableId).then(res => {
+        if (res.data.code === 200) {
+          this.orderId = res.data.data.orderId
+          this.orderFoodList = res.data.data.orderdetail
         }
-        this.msgForm.messageType = 2
-        addMsg(this.msgForm).then(res => {
-          if (res.data.code === 200) {
-            this.$message.success('订单备注成功')
-            // 修改sideBar子组件数据值
-            this.$refs.sideBar.dialogFormVisible = false
-            this.resetMsgForm()
-          } else
-            this.$message.error(res.data.message)
-        })
-      },
-      // 侧边栏-催单
-      sendUrgeMsg() {
-        this.msgForm.messageType = 1
-        addMsg(this.msgForm).then(res => {
-          if (res.data.code === 200) {
-            this.$message.success('催单成功')
-            this.resetMsgForm()
-          } else
-            this.$message.error(res.data.message)
-        })
-      },
-      // 侧边栏-结账
-      orderCheckOut() {
-        checkOut(this.orderId).then(res => {
-          if (res.data.code === 200) {
-            this.$message.success('结账成功')
-            this.cartFoodList = []
-            this.orderFoodList = []
-          } else
-            this.$message.error(res.data.message)
-        })
-      },
-      // 侧边栏-撤单
-      cancelOrder() {
-        cancelOrder(this.orderId).then(res => {
-          if (res.data.code === 200) {
-            this.$message.success('该订单已成功撤销')
-            this.orderFoodList = []
-          } else
-            this.$message.error(res.data.message)
-        })
-      },
-      // 侧边栏-重置消息表单
-      resetMsgForm() {
-        this.msgForm.messageType = undefined
-        this.msgForm.messageContent = undefined
-        }
+      })
+    },
+    // 侧边栏-发送订单备注消息
+    sendMsg() {
+      if (this.msgForm.messageContent == null || this.msgForm.messageContent == undefined || this.msgForm.messageContent.trim() == '') {
+        this.$message.warning('请输入备注内容')
+        return
       }
+      this.msgForm.messageType = 2
+      addMsg(this.msgForm).then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('订单备注成功')
+          // 修改sideBar子组件数据值
+          this.$refs.sideBar.dialogFormVisible = false
+          this.resetMsgForm()
+        } else { this.$message.error(res.data.message) }
+      })
+    },
+    // 侧边栏-催单
+    sendUrgeMsg() {
+      this.msgForm.messageType = 1
+      addMsg(this.msgForm).then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('催单成功')
+          this.resetMsgForm()
+        } else { this.$message.error(res.data.message) }
+      })
+    },
+    // 侧边栏-结账
+    orderCheckOut() {
+      checkOut(this.orderId).then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('结账成功')
+          this.cartFoodList = []
+          this.orderFoodList = []
+        } else { this.$message.error(res.data.message) }
+      })
+    },
+    // 侧边栏-撤单
+    cancelOrder() {
+      cancelOrder(this.orderId).then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('该订单已成功撤销')
+          this.orderFoodList = []
+        } else { this.$message.error(res.data.message) }
+      })
+    },
+    // 侧边栏-重置消息表单
+    resetMsgForm() {
+      this.msgForm.messageType = undefined
+      this.msgForm.messageContent = undefined
+    }
   }
+}
 </script>
 
 <style lang="scss" scoped>
