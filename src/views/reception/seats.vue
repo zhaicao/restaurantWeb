@@ -1,12 +1,33 @@
 <template>
   <div class="seats-container">
+    <div :style="{ right: true }" class="bar__side-bar-bg"/>
+    <div :style="{ right: true }">
+      <div
+        @mouseover="sideMouseOver1"
+        @mouseout="sideMouseOut1"
+      >
+        <el-button
+          size="medium"
+          class="bar__btn"
+          style="position: absolute; z-index: 998; margin-top: 400px;"
+          @click="table = true"
+        >
+          <!--            style="position: absolute; z-index: 998; margin-top: 400px;"-->
+          {{ btnName }}
+          <i class="el-icon-s-order"/>
+        </el-button>
+      </div>
+    </div>
+
     <div class="filter-container">
+
       <h2 style="text-align: center; color: #eeeeee">餐厅桌位（包间）列表</h2>
       <el-row style="float: right;">
-        <!--        <template>-->
-        <!--          <el-button type="text" @click="opened">点击打开 Message Box</el-button>-->
-        <!--        </template>-->
-        <el-button v-if="isShow" type="primary" style="margin-left: 16px;" @click="table = true">排号</el-button>
+        <!--        <el-button v-if="isShow" type="primary" style="margin-left: 16px;" @click="table = true">排号</el-button>-->
+        <el-button
+          type="success"
+          style="margin-left: 16px;"
+          @click="opened('numberTable1')">叫号</el-button>
         <el-button type="primary" icon="el-icon-edit" @click="handleAttendence('punchIn')">签到</el-button>
         <el-button type="primary" icon="el-icon-edit" @click="handleAttendence('punchOut')">签退</el-button>
         <el-button type="warning" icon="el-icon-star-off" @click="handleLeave()">请假</el-button>
@@ -35,7 +56,7 @@
       :append-to-body="true"
       :visible.sync="table"
       title="排号"
-      direction="rtl"
+      direction="ltr"
       size="50%">
       <el-table :data="callnumberList">
         <el-table-column prop="elementNum" label="号码" width="200"/>
@@ -43,18 +64,22 @@
         <el-table-column prop="elementDate" label="日期" width="200"/>
         <el-table-column label="操作">
           <template slot-scope="scope">
-            <el-button
-              size="mini"
-              type="primary"
-              @click="numberEdit(scope.row.number,scope.$index)">入座</el-button>
-            <el-button
-              size="mini"
-              type="warning"
-              @click="numberRe(scope.row)">过号</el-button>
-            <el-button
-              size="mini"
-              type="danger"
-              @click="numberDelete(scope.row)">删除</el-button>
+            <div class="operation-column">
+              <el-button
+                v-if="scope.$index == 0"
+                size="mini"
+                type="primary"
+                @click="numberEdit(scope.row.number,scope.$index)">入座</el-button>
+              <el-button
+                v-if="scope.$index == 0"
+                size="mini"
+                type="warning"
+                @click="numberRe(scope.row)">过号</el-button>
+              <el-button
+                size="mini"
+                type="danger"
+                @click="numberDelete(scope.row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -62,10 +87,10 @@
         总数：{{ callnumberList.length }}
       </span>
       <el-row style="float: right;">
-        <el-button
-          type="success"
-          style="margin-right: 250px;........"
-          @click="opened">叫号</el-button>
+        <!--        <el-button-->
+        <!--          type="success"-->
+        <!--          style="margin-right: 250px;........"-->
+        <!--          @click="opened">叫号</el-button>-->
       </el-row>
     </el-drawer>
 
@@ -95,6 +120,12 @@
         <el-table-column prop="elementDate" label="日期"/>
       </el-table>
       <div style="text-align:center">
+        <input
+          ref="inputdata"
+          type="text"
+          class="hiddenIpt"
+          @keyup.enter="addnumberline()"
+        >
         <el-button
           type="success"
           style="margin-right: 50px;........"
@@ -104,15 +135,16 @@
     <!--\Dialog-->
 
     <!--Dialog-->
-    <el-dialog :visible.sync="outForm" :append-to-body="true" title="叫号" center>
-      <el-form ref="numberTable1" :rules="rules" :model="numberTable1" label-position="left" label-width="120px" style="width: 500px; margin-left:50px;">
+    <el-dialog :visible.sync="outForm" :append-to-body="true" title="叫号" center @close="resetForm('numberTable1')">
+      <el-form ref="numberTable1" :rules="rules" :model="numberTable1" :validate-on-rule-change="false" label-position="left" label-width="120px" style="width: 500px; margin-left:50px;">
 
         <el-form-item label="手机号" prop="elementUserPhone">
-          <el-input v-model.number="numberTable1.elementUserPhone"/>
+          <el-input v-model.number="numberTable1.elementUserPhone" @keyup.enter.native="getCallNumber()"/>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="getCallNumber()">确定</el-button>
-          <el-button @click="closeoutForm()">取消</el-button>
+          <el-button type="primary" @click="getCallNumber()" >确定</el-button>
+          <!--          <el-button @click="closeoutForm()">取消</el-button>-->
+          <el-button @click="resetForm('numberTable1')">取消</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -124,6 +156,7 @@
 import { getTableListAll } from '@/api/seat'
 import TakePhotos from '@/views/userInfo/component/takePhoto'
 import AttendanceHandler from '@/views/userInfo/mixin/AttendanceHandler'
+// eslint-disable-next-line no-unused-vars
 import { getCallnumberListAll, getNumber, getAllNumber, delQueue, takeNumber, regetNumber } from '../../api/callnumber'
 
 export default {
@@ -135,8 +168,8 @@ export default {
       rules: {
         elementUserPhone: [
           // 添加正则表达式 pattern: /^1[3|5|7|8|9]\d{9}$/，验证手机号是否正确
-          { required: true, message: '请输入手机号', trigger: 'change' },
-          { pattern: /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/, message: '请输入正确的号码格式', trigger: 'change' }
+          { required: true, message: '请输入手机号', trigger: 'blur' },
+          { pattern: /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/, message: '请输入正确的号码格式', trigger: ['blur', 'change'] }
         ]
       },
 
@@ -170,7 +203,18 @@ export default {
       numberTable1: {
         elementUserPhone: ' '
       },
-      callnumberList: ' '
+      callnumberList: ' ',
+      btnName: ''
+    }
+  },
+
+  watch: {
+    outVisible() {
+      if (this.outVisible) {
+        this.$nextTick(() => {
+          this.$refs.inputdata.focus()
+        })
+      }
     }
   },
 
@@ -179,25 +223,21 @@ export default {
     this.getSeatList()
   },
 
-  // watch: {
-  //   cartFoodList: {
-  //     immediate: true,
-  //     // 判断购物车是否为空，改变其样式
-  //     handler(val) {
-  //       if (val.length !== 0)
-  //         this.cart.isEmpty = false
-  //       else {
-  //         this.cart.isOpen = false
-  //         this.cart.isEmpty = true
-  //       }
-  //     }
-  //   }
-  // },
-
   methods: {
+    // 侧边栏-鼠标移动样式
+    sideMouseOver1() {
+      this.btnName = '叫号详情'
+    },
+    // 侧边栏-鼠标移除样式
+    sideMouseOut1() {
+      this.btnName = ''
+    },
 
     // 叫号
-    opened() {
+    opened(formName) {
+      if (this.$refs[formName]) {
+        this.$refs[formName].clearValidate()
+      }
       this.outForm = true
     },
 
@@ -210,9 +250,9 @@ export default {
         } else {
           getNumber(this.numberTable1).then(res => {
             if (res.data.code === 200) {
-              console.log(res)
+              // console.log(res)
               this.numberTable.push(res.data.data)
-              console.log(this.numberTable)
+              // console.log(this.numberTable)
               this.outVisible = true
               this.outForm = false
               this.numberTable1 = this.$options.data().numberTable1
@@ -230,6 +270,12 @@ export default {
 
     closeoutForm() {
       this.outForm = false
+      this.numberTable1.elementUserPhone = this.$options.data().numberTable1.elementUserPhone
+    },
+
+    resetForm(formName) {
+      this.outForm = false
+      this.$refs[formName].resetFields()
     },
 
     // 入座
@@ -345,6 +391,36 @@ export default {
   $bg_hover:#4b8fb1;
   $used_bg:#ff4d51;
   $free_bg:#d3dce6;
+  $bg-color: #666666;
+  @mixin position{
+    position: fixed;
+    z-index: 999;
+  }
+
+  .hiddenIpt {
+    width: 1px;
+    opacity: 0;
+  }
+
+  .operation-column {
+    text-align: right;
+    margin-left: 10%;
+  }
+
+  .bar {
+    &__index {
+      > > > .el-drawer__header > :first-child {
+        text-align: center;
+      }
+    }
+
+    &__side-bar-bg {
+      @include position();
+      height: 100%;
+      width: 10px;
+      background-color: $bg-color;
+    }
+  }
 
   .seats-jiaohao{
     z-index: 111;
