@@ -426,9 +426,28 @@ export default {
       @include position();
       height: 100%;
       width: 10px;
-      background-color: $bg;
+      background-color: $free_bg;
+    }
+
+    &__btn {
+      display: flex;
+      justify-content: flex-end;
+      position: absolute;
+      z-index: 998;
+      margin-top: 400px;
+      background: $free_bg;
+      border-color: $free_bg;
+      color: $bg-color;
+      >>> .el-button--primary {
+        background-color: $free_bg;
+        border-color: $free_bg;
+        padding-left: 10px;
+        padding-right: 15px;
+      }
     }
   }
+
+  bar__btn
 
   .seats-jiaohao{
     z-index: 111;
