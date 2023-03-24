@@ -62,7 +62,7 @@
         <el-table-column prop="elementNum" label="号码" width="200"/>
         <el-table-column prop="elementUserPhone" label="电话号码" width="200"/>
         <el-table-column prop="elementDate" label="日期" width="200"/>
-        <el-table-column label="操作">
+        <el-table-column label="操作" align="center" width="250px">
           <template slot-scope="scope">
             <div class="operation-column">
               <el-button
@@ -286,18 +286,26 @@ export default {
         type: 'warning'
       }).then(() => {
         this.gridData.splice(index, 1)
-        takeNumber().then(res => {
-          getTableListAll().then(res => {
-            this.seatList = res.data.data
-            console.log(this.seatList)
-            for (var item of this.seatList) {
-              if (item.tableUse == 0) {
-                // console.log(item.tableId)
-                this.$router.push('/menu/' + item.tableId)
-                break
-              }
-            }
+        getTableListAll().then(res => {
+          this.seatList = res.data.data
+          console.log(this.seatList)
+          var arr1 = this.seatList.findIndex((v) => {
+            return v.tableUse == 0// return v.value ===  '9'  返回-1
           })
+          console.log(arr1)
+          if (arr1 != -1) {
+            takeNumber().then(res => {
+              // console.log(this.seatList[arr1].tableId)
+              var tableid1 = this.seatList[arr1].tableId
+              this.$router.push('/menu/' + tableid1)
+            })
+            // console.log(this.seatList[arr1])
+          } else {
+            this.$message({
+              type: 'info',
+              message: '座位已满'
+            })
+          }
         })
       }).catch(() => {
         this.$message({
@@ -418,7 +426,7 @@ export default {
       @include position();
       height: 100%;
       width: 10px;
-      background-color: $bg-color;
+      background-color: $bg;
     }
   }
 
